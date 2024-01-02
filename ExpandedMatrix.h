@@ -1,25 +1,28 @@
 #pragma once
 
 #include "defs.h"
+#include "Coordinate.h"
 #include "Matrix.h"
 
-#define ROOM 1
 #define DOOR 2
 
 class ExpandedMatrix : public Matrix {
     private:
         int dimensionEx;
         int** matrixEx;
-        // int numElementsEx;
+        Coordinate* coordConnections;
+        int numConnections;
+
         void expandMatrix(); // makes initial matrix of 1s & 0s randomly
         void buildConnections();
+        bool removeConnection(const Coordinate& c);
 
     public:
         ExpandedMatrix(int d);
         ~ExpandedMatrix();
         void removeCommonLoops();
         void printEx();
+        void printConnections();
         int getCenterCoordEx();
-        bool getCoordEx(int currX, int currY, Direction dir, int* coord);
-        bool checkElementEx(int xCheck, int yCheck, int compare);
+        bool checkElementEx(const Coordinate& c, int compare) const;
 };

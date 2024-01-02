@@ -7,18 +7,24 @@
 void pBreak();
 
 int main(){
-    ExpandedMatrix m(11);
+    srand(static_cast<unsigned int>(time(nullptr)));
+    ExpandedMatrix m(3);
     pBreak();
     m.print();
     pBreak();
 
     m.printEx();
+    pBreak();
+    m.printConnections();
     pBreak();
 
     m.removeCommonLoops();
+
     m.print();
     pBreak();
     m.printEx();
+    pBreak();
+    m.printConnections();
     pBreak();
 
     // recursive walk through map -> store max coord top left max coord bottom right -> to crop -> make make a walk object
@@ -39,7 +45,6 @@ int main(){
 
 
     */
-
 
     return 0;
 }
