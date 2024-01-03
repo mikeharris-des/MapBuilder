@@ -18,11 +18,20 @@ class ExpandedMatrix : public Matrix {
         bool removeConnection(const Coordinate& c);
 
     public:
-        ExpandedMatrix(int d);
+        ExpandedMatrix(int d = 3);
         ~ExpandedMatrix();
         void removeCommonLoops();
+        void modCoordElement(const Coordinate& c, int increment);
+
         void printEx();
         void printConnections();
+
+        int getDimension();
+        int getMatrixSize();
+
         int getCenterCoordEx();
+        int get(const Coordinate& c);
+        int get(int x, int y);
+
         bool checkElementEx(const Coordinate& c, int compare) const;
 };

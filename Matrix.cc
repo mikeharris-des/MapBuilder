@@ -13,6 +13,18 @@ Matrix::Matrix(int d){
     buildMatrix();
 }
 
+Matrix::Matrix(const Matrix& m){ // cp ctor
+    this->dimension = m.dimension;
+    this->matrix = new int*[m.dimension];
+    for (int i = 0; i < m.dimension; ++i) {
+        this->matrix[i] = new int[m.dimension]; // needs to be pointer array for memory issues of statically allocating fixed size
+    }
+    this->numElements = 0;
+    this->coordElements = new Coordinate[m.dimension*m.dimension]; // dyn allocd coordinate arr
+    buildMatrix(m);
+}
+
+
 Matrix::~Matrix(){
     for(int i = 0; i< this->dimension; ++i){
         delete [] this->matrix[i]; // delete nested arrays dynamically allocated
@@ -40,6 +52,24 @@ void Matrix::buildMatrix(){
     }
 }
 
+void Matrix::buildMatrix(const Matrix& m){
+    if(m.dimension!=this->dimension){return;}
+
+    for (int i = 0; i < this->dimension; ++i) {     // rows = outer loop increments y
+        for (int j = 0; j < this->dimension; ++j) {  // cols = inner loop increments x
+            this->matrix[i][j] = m.matrix[i][j];
+            if(this->matrix[i][j]==ROOM){
+                this->coordElements[this->numElements].set(j,i);
+                ++this->numElements;
+                if(DEBUG)cout << this->matrix[i][j] << endl;
+            } else{
+                if(DEBUG)cout << this->matrix[i][j] << endl;
+            }
+        }
+        if(DEBUG)cout << endl;
+    }
+}
+
 bool Matrix::defaultElement(int x, int y) const{
     int c = getCenterCoord();
     if(y == c && x == c) return true;       // yx == centre
@@ -60,8 +90,12 @@ int Matrix::getCenterCoord() const{
 }
 
 
-bool Matrix::checkElement(const Coordinate& coord, int compare) const{
-    return (this->matrix[coord.y()][coord.x()] == compare);
+bool Matrix::checkElement(const Coordinate& c, int compare) const{
+    if(c.x()<0 || c.x()>=this->dimension || c.y()<0 || c.y()>=this->dimension){
+        return false;
+    } else{
+        return (this->matrix[c.y()][c.x()] == compare);
+    }
 }
 
 void Matrix::print() const{

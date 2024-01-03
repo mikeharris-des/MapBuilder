@@ -7,7 +7,7 @@ void Coordinate::set(int x, int y){
     this->yCoord = y;
 }
 
-bool Coordinate::setInDirection(int tempX, int tempY, Direction dir, int bounds){
+void Coordinate::setInDirection(int tempX, int tempY, Direction dir){
     int inc = 1;
     switch(dir){
         case EAST:
@@ -25,17 +25,67 @@ bool Coordinate::setInDirection(int tempX, int tempY, Direction dir, int bounds)
         default:
             tempX = -1;
             tempY = -1;
-            cout << "error getCoord" << endl;
+            cout << "error setInDirection" << endl;
             break;
     }
-    if(tempX<0 || tempX>=bounds || tempY<0 || tempY>=bounds){
-        return false;
-    } else{
-        this->xCoord = tempX;
-        this->yCoord = tempY;
-        return true;
-    }
+    this->xCoord = tempX;
+    this->yCoord = tempY;
 }
+
+void Coordinate::setInDirection(const Coordinate& coord, Direction dir){
+    int inc = 1;
+    int tempX = coord.x();
+    int tempY = coord.y();
+    switch(dir){
+        case EAST:
+        tempX = tempX + inc;
+            break;
+        case NORTH:
+        tempY = tempY - inc;
+            break;
+        case WEST:
+        tempX = tempX - inc;
+            break;
+        case SOUTH:
+        tempY = tempY + inc;
+            break;
+        default:
+            tempX = -1;
+            tempY = -1;
+            cout << "error setInDirection" << endl;
+            break;
+    }
+    this->xCoord = tempX;
+    this->yCoord = tempY;
+}
+
+void Coordinate::setInDirection(const Coordinate& coord, Direction dir, int jump){
+    int inc = jump;
+    int tempX = coord.x();
+    int tempY = coord.y();
+    switch(dir){
+        case EAST:
+        tempX = tempX + inc;
+            break;
+        case NORTH:
+        tempY = tempY - inc;
+            break;
+        case WEST:
+        tempX = tempX - inc;
+            break;
+        case SOUTH:
+        tempY = tempY + inc;
+            break;
+        default:
+            tempX = -1;
+            tempY = -1;
+            cout << "error setInDirection" << endl;
+            break;
+    }
+    this->xCoord = tempX;
+    this->yCoord = tempY;
+}
+
 
 string Coordinate::directionToString(Direction dir) {
     switch (dir) {
@@ -59,6 +109,14 @@ void Coordinate::print() const{
 
 bool Coordinate::operator==(const Coordinate& coord) const{
     return coord.x()==this->xCoord && coord.y()==this->yCoord;
+}
+
+bool Coordinate::compareY(const Coordinate& coord) const{
+    return this->yCoord<coord.y();
+}
+
+bool Coordinate::compareX(const Coordinate& coord) const{
+    return this->xCoord<coord.x();
 }
 
 ostream& operator<<(ostream& os, const Coordinate& coord) {
