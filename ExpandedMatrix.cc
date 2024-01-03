@@ -59,25 +59,20 @@ void ExpandedMatrix::buildConnections(){
             Coordinate cEx;
             Direction dir = static_cast<Direction>(j);
             if(DEBUG)cout << "      " << dir << " |";
-            // c.setInDirection(x,y,dir,this->dimensionEx);
-            if(c.setInDirection(x,y,dir,dimension)){
-                if(DEBUG)cout << c << " | ";
-                if(checkElement(c, ROOM)){ // if there is a 1 in that direction make a 2 inbetween
-                    // cEx.setInDirection(2*x,2*y,dir,this->dimensionEx);
-                    if(cEx.setInDirection(2*x,2*y,dir,this->dimensionEx)){ // covert coordinate to expanded coord = *2 as need to get 1 in direction if not out of bounds (double check)
-                        if(DEBUG)cout << cEx;
-                        if(!checkElementEx(cEx, DOOR)){
-                            this->matrixEx[cEx.y()][cEx.x()] = DOOR;
-                            this->coordConnections[this->numConnections] = cEx;
-                            cout << cEx << " ";
-                            ++this->numConnections;
-                        }
-                    } else{
-                        cout << endl << "BIG ERRR bC " << __LINE__ << endl << endl;
-                    }
+            c.setInDirection(x,y,dir);
+            if(DEBUG)cout << c << " | ";
+            if(checkElement(c, ROOM)){ // if there is a 1 in that direction make a 2 inbetween
+                cEx.setInDirection(2*x,2*y,dir);
+                if(DEBUG)cout << cEx;
+                if(!checkElementEx(cEx, DOOR)){
+                    this->matrixEx[cEx.y()][cEx.x()] = DOOR;
+                    this->coordConnections[this->numConnections] = cEx;
+                    cout << cEx << " ";
+                    ++this->numConnections;
+                }else{
+                    if(DEBUG) cout << " door already mapped";
                 }
-            }
-            else{
+            }else{
                 if(DEBUG2)cout << "_______________BH dir :" << cEx.directionToString(dir) << endl;
             }
             if(DEBUG)cout << endl;
@@ -114,16 +109,15 @@ void ExpandedMatrix::removeCommonLoops(){
                 for (int j = 0; j < DIRECTION_COUNT; ++j) {
                     Direction dir = static_cast<Direction>(j);
                     //getCoordEx(x, y, dir, resultEx);
-                    if(cEx.setInDirection(x, y, dir, this->dimensionEx)){
-                        if(checkElementEx(cEx, DOOR)){++countLoop;}
-                    } else{
-                        if(DEBUG)cout << "_______________BH: " << x << "," << y << " dir :" << cEx.directionToString(dir) << endl; // message showing boundry hit
-                    }
+                    cEx.setInDirection(x, y, dir);
+                    if(checkElementEx(cEx, DOOR)){++countLoop;}
+                    else{if(DEBUG)cout << "_______________BH: " << x << "," << y << " dir :" << cEx.directionToString(dir) << endl;} // message showing boundry hit}
                 }
                 if(countLoop==DIRECTION_COUNT){
 
                     Direction dir = static_cast<Direction>(rand()%DIRECTION_COUNT); // remove road in random location
-                    cEx.setInDirection(x,y,dir,this->dimensionEx);
+                    // cEx.setInDirection(x,y,dir,this->dimensionEx);
+                    cEx.setInDirection(x, y, dir);
                     this->matrixEx[cEx.y()][cEx.x()] = 0; // remove road
                     if(!removeConnection(cEx)){
                         if(DEBUG)cout << " ** no connection at coord: " << cEx << endl;
@@ -134,13 +128,46 @@ void ExpandedMatrix::removeCommonLoops(){
     }
 }
 
+void ExpandedMatrix::modCoordElement(const Coordinate& c, int increment){
+    if(c.x()<0 || c.x() >= this->dimensionEx || c.y()<0 || c.y() >= this->dimensionEx ){ // bounds check
+        return;
+    }
+    this->matrixEx[c.y()][c.x()] += increment;
+    if(DEBUG)cout << c << " modified to: " << this->matrixEx[c.y()][c.x()] << endl;
+}
+
+int ExpandedMatrix::getDimension(){
+    return this->dimensionEx;
+}
+
+int ExpandedMatrix::getMatrixSize(){
+    return this->dimensionEx*this->dimensionEx;
+}
+
+int ExpandedMatrix::get(const Coordinate& c){
+    if(c.x()<0 || c.x() >= this->dimensionEx || c.y()<0 || c.y() >= this->dimensionEx ){ // bounds check
+        return -1;
+    }
+    return this->matrixEx[c.y()][c.x()];
+}
+
+int ExpandedMatrix::get(int x, int y){
+    if(x<0 || x >= this->dimensionEx || y<0 || y >= this->dimensionEx ){ // bounds check
+        return -1;
+    }
+    return this->matrixEx[y][x];
+}
 
 int ExpandedMatrix::getCenterCoordEx(){
     return this->dimensionEx/2;
 }
 
 bool ExpandedMatrix::checkElementEx(const Coordinate& c, int compare) const{
-    return (this->matrixEx[c.y()][c.x()] == compare);
+    if(c.x()<0 || c.x() >= this->dimensionEx || c.y()<0 || c.y() >= this->dimensionEx){
+        return false;
+    } else{
+        return (this->matrixEx[c.y()][c.x()] == compare);
+    }
 }
 
 bool ExpandedMatrix::removeConnection(const Coordinate& c){

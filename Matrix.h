@@ -15,9 +15,11 @@ class Matrix {
 
     private:
         void buildMatrix(); // makes initial matrix of 1s & 0s randomly
+        void buildMatrix(const Matrix& m); // copies to initial matrix of 1s & 0s from the given matrix
 
     public:
         Matrix(int d = 3);
+        Matrix(const Matrix& m); // cpy ctor
         ~Matrix();
         bool defaultElement(int x, int y) const; // inserts valid elements (1s) at default coordinates
 

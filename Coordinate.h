@@ -15,9 +15,14 @@ class Coordinate {
         int y() const {return this->yCoord;} // getter for y
 
         void set(int x, int y); // setter for this location x/y
-        bool setInDirection(int tempX, int tempY, Direction dir, int bounds);
+        void setInDirection(int tempX, int tempY, Direction dir);
+        void setInDirection(const Coordinate& coord, Direction dir);
+        void setInDirection(const Coordinate& coord, Direction dir, int jump);
         string directionToString(Direction dir);
         void print() const; // print meta data
 
         bool operator==(const Coordinate& coord) const;
+
+        bool compareY(const Coordinate& coord) const;
+        bool compareX(const Coordinate& coord) const;
 };
