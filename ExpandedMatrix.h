@@ -22,6 +22,7 @@ class ExpandedMatrix : public Matrix {
         ~ExpandedMatrix();
         void removeCommonLoops();
         void modCoordElement(const Coordinate& c, int increment);
+        void clearCoordinate(const Coordinate& c);
 
         void printEx();
         void printConnections();

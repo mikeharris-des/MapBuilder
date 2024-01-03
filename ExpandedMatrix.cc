@@ -136,6 +136,14 @@ void ExpandedMatrix::modCoordElement(const Coordinate& c, int increment){
     if(DEBUG)cout << c << " modified to: " << this->matrixEx[c.y()][c.x()] << endl;
 }
 
+void ExpandedMatrix::clearCoordinate(const Coordinate& c){
+    if(c.x()<0 || c.x() >= this->dimensionEx || c.y()<0 || c.y() >= this->dimensionEx ){ // bounds check
+        return;
+    }
+    this->matrixEx[c.y()][c.x()] = 0;
+    if(DEBUG)cout << c << " cleared to: " << this->matrixEx[c.y()][c.x()] << endl;
+}
+
 int ExpandedMatrix::getDimension(){
     return this->dimensionEx;
 }

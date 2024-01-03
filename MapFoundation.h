@@ -20,10 +20,12 @@ class MapFoundation {
         int coordMostS;
         int coordMostW;
 
+        void mapWalk(Coordinate& currCoord);
+        void filterIsolated();
+
     public:
         MapFoundation(ExpandedMatrix* exMatrix);
         ~MapFoundation();
-        void mapWalk(Coordinate& currCoord);
 
         Coordinate* getNextPath();
 

@@ -22,6 +22,7 @@ MapFoundation::MapFoundation(ExpandedMatrix* exMatrix){
     this->coordMostW = center;
 
     mapWalk(currCoord);
+    filterIsolated();
 }
 
 MapFoundation::~MapFoundation(){
@@ -115,6 +116,25 @@ void MapFoundation::storeBounds(const Coordinate& currCoord){
     }
     if(x > this->coordMostE){ // closest to x == dimensionEx;
         this->coordMostE = x;
+    }
+}
+
+void MapFoundation::filterIsolated(){
+    for(int i = 0; i< map->getDimension();++i){
+        for(int j = 0; j<map->getDimension(); ++j){
+            Coordinate currCoord(j,i);
+            int out = map->get(currCoord);
+            switch(out){
+                case ROOM + VISITED:
+                case DOOR + VISITED:
+                    if(DEBUG)cout << currCoord << " stored " << endl;
+                    break;
+                default:
+                    map->clearCoordinate(currCoord);
+                    if(DEBUG)cout << currCoord << " cleared " << endl;
+                    break;
+            }
+        }
     }
 }
 

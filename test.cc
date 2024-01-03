@@ -9,7 +9,7 @@ void pBreak();
 
 int main(){
     srand(static_cast<unsigned int>(time(nullptr)));
-    ExpandedMatrix m(5);
+    ExpandedMatrix m(99);
     pBreak();
     m.print();
     pBreak();
@@ -28,11 +28,11 @@ int main(){
     m.printConnections();
     pBreak();
 
-    MapFoundation cropMap(&m);
-    cropMap.print();
-    
+    MapFoundation mapF(&m);
+    mapF.print();
+
     pBreak();
-    cropMap.printBoundsAbsolute();
+    mapF.printBoundsAbsolute();
     pBreak();
 
     return 0;
