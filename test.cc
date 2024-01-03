@@ -3,33 +3,33 @@
 #include "ExpandedMatrix.h"
 #include "MapFoundation.h"
 
-// MAKE COORDINATE OBJECT CLASS
+#define DEBUG_MAIN 0
 
 void pBreak();
 
 int main(){
     srand(static_cast<unsigned int>(time(nullptr)));
     ExpandedMatrix m(99);
-    pBreak();
-    m.print();
-    pBreak();
+    if(DEBUG_MAIN)pBreak();
+    if(DEBUG_MAIN)m.print();
+    if(DEBUG_MAIN)pBreak();
 
-    m.printEx();
-    pBreak();
-    m.printConnections();
-    pBreak();
+    if(DEBUG_MAIN)m.printEx();
+    if(DEBUG_MAIN)pBreak();
+    if(DEBUG_MAIN)m.printConnections();
+    if(DEBUG_MAIN)pBreak();
 
     m.removeCommonLoops();
 
-    m.print();
-    pBreak();
-    m.printEx();
-    pBreak();
-    m.printConnections();
-    pBreak();
+    if(DEBUG_MAIN)m.print();
+    if(DEBUG_MAIN)pBreak();
+    if(DEBUG_MAIN)m.printEx();
+    if(DEBUG_MAIN)pBreak();
+    if(DEBUG_MAIN)m.printConnections();
+    if(DEBUG_MAIN)pBreak();
 
     MapFoundation mapF(&m);
-    mapF.print();
+    if(DEBUG_MAIN)mapF.print();
 
     pBreak();
     mapF.printBoundsAbsolute();

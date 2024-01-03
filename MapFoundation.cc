@@ -97,7 +97,7 @@ void MapFoundation::checkDoors(){
     for(int i = 0; i<this->numDoors; ++i){
         if(map->checkElementEx(this->doors[i], DOOR)){
             map->modCoordElement(this->doors[i],VISITED);
-            cout<<this->doors[i]<<" was missed"<<endl;
+            if(DEBUG)cout<<this->doors[i]<<" was missed"<<endl;
         }
     }
 }
@@ -139,7 +139,7 @@ void MapFoundation::filterIsolated(){
 }
 
 void MapFoundation::printBoundsAbsolute() const{
-    cout << "N: " << this->coordMostN << " | E: " << this->coordMostE << " | S: " << this->coordMostS << " | W: " << this->coordMostW << endl;
+    if(DEBUG)cout << "N: " << this->coordMostN << " | E: " << this->coordMostE << " | S: " << this->coordMostS << " | W: " << this->coordMostW << endl;
     for(int i = this->coordMostN; i<=this->coordMostS;++i){
         for(int j = this->coordMostW; j<=this->coordMostE; ++j){
             int out = map->get(j,i);

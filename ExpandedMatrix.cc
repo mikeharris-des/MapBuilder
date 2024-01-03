@@ -67,7 +67,7 @@ void ExpandedMatrix::buildConnections(){
                 if(!checkElementEx(cEx, DOOR)){
                     this->matrixEx[cEx.y()][cEx.x()] = DOOR;
                     this->coordConnections[this->numConnections] = cEx;
-                    cout << cEx << " ";
+                    if(DEBUG)cout << cEx << " ";
                     ++this->numConnections;
                 }else{
                     if(DEBUG) cout << " door already mapped";
