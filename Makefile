@@ -1,10 +1,13 @@
-test: test.o Matrix.o ExpandedMatrix.o Coordinate.o MapFoundation.o
-	g++ -o test test.o Matrix.o ExpandedMatrix.o Coordinate.o MapFoundation.o
+test: test.o Matrix.o ExpandedMatrix.o Coordinate.o MapFoundation.o Map.o
+	g++ -o test test.o Matrix.o ExpandedMatrix.o Coordinate.o MapFoundation.o Map.o
 
 test.o: test.cc
 	g++ -c test.cc
 
-MapFoundation.o: MapFoundation.cc MapFoundation.h ExpandedMatrix.h Coordinate.h
+Map.o: Map.cc MapFoundation.h ExpandedMatrix.h Coordinate.h
+	g++ -c Map.cc
+
+MapFoundation.o: MapFoundation.cc MapFoundation.h Map.h ExpandedMatrix.h Coordinate.h
 	g++ -c MapFoundation.cc
 
 Matrix.o: Matrix.cc Matrix.h Coordinate.h

@@ -1,13 +1,20 @@
+#pragma once
 #include "defs.h"
 #include "Coordinate.h"
 #include "ExpandedMatrix.h"
+#include "Map.h"
 
 #define VISITED 2
 
+class Map;
+
 //crops ExpandedMatrix with only navigable rooms and doors
 class MapFoundation {
+
+    friend class Map; // for constructor access to member data (inheritance created issues with other objects)
+
     private:
-        ExpandedMatrix* map;
+        ExpandedMatrix* matrix;
 
         Coordinate* rooms;
         int numRooms;
@@ -20,8 +27,11 @@ class MapFoundation {
         int coordMostS;
         int coordMostW;
 
-        void mapWalk(Coordinate& currCoord);
+        Map* finalMap;
+
+        void matrixWalk(Coordinate& currCoord);
         void filterIsolated();
+        void makeMap();
 
     public:
         MapFoundation(ExpandedMatrix* exMatrix);
@@ -34,4 +44,5 @@ class MapFoundation {
         void checkDoors();
         void print() const;
         void printBoundsAbsolute() const;
+
 };

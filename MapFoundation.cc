@@ -2,18 +2,18 @@
 
 
 MapFoundation::MapFoundation(ExpandedMatrix* exMatrix){
-    this->map = exMatrix;
+    this->matrix = exMatrix;
 
-    this->rooms = new Coordinate[map->getMatrixSize()];
+    this->rooms = new Coordinate[matrix->getMatrixSize()];
     this->numRooms = 0;
 
-    this->doors = new Coordinate[map->getMatrixSize()];
+    this->doors = new Coordinate[matrix->getMatrixSize()];
     this->numDoors = 0;
 
-    // recursive walk through map -> store max coord top left max coord bottom right -> to crop -> make make a walk object
+    // recursive walk through matrix -> store max coord top left max coord bottom right -> to crop -> make make a walk object
     // store visited
     // handle loops
-    int center = map->getCenterCoordEx();
+    int center = matrix->getCenterCoordEx();
     Coordinate currCoord(center,center);
 
     this->coordMostN = center;
@@ -21,16 +21,23 @@ MapFoundation::MapFoundation(ExpandedMatrix* exMatrix){
     this->coordMostE = center;
     this->coordMostW = center;
 
-    mapWalk(currCoord);
+    this->finalMap = nullptr;
+
+    matrixWalk(currCoord);
     filterIsolated();
+    makeMap();
 }
 
 MapFoundation::~MapFoundation(){
     delete [] this->rooms;
     delete [] this->doors;
+
+    if(this->finalMap){
+        delete this->finalMap;
+    }
 }
 
-void MapFoundation::mapWalk(Coordinate& currCoord){
+void MapFoundation::matrixWalk(Coordinate& currCoord){
     storeBounds(currCoord);
     int nextDir = DIRECTION_COUNT;
     bool first = true;
@@ -40,7 +47,7 @@ void MapFoundation::mapWalk(Coordinate& currCoord){
 
         int move = 1; // from current position move this many coordinate values
         tempCoord.setInDirection(currCoord,dir,move);
-        if(map->checkElementEx(tempCoord, DOOR)){ // if door in that direction
+        if(matrix->checkElementEx(tempCoord, DOOR)){ // if door in that direction
             if(first){ // move consistent
                 nextDir = i;
                 first = false;
@@ -60,24 +67,24 @@ void MapFoundation::mapWalk(Coordinate& currCoord){
     }
 
     // store visited this element
-    if(map->checkElementEx(currCoord, ROOM)){
-        map->modCoordElement(currCoord,VISITED); // visit this room
+    if(matrix->checkElementEx(currCoord, ROOM)){
+        matrix->modCoordElement(currCoord,VISITED); // visit this room
     }
     Direction dir = static_cast<Direction>(nextDir);
     if(dir!=DIRECTION_COUNT){
         // mod door
         currCoord.setInDirection(currCoord,dir); // visit next door too
-        map->modCoordElement(currCoord,VISITED);
+        matrix->modCoordElement(currCoord,VISITED);
 
         currCoord.setInDirection(currCoord,dir); // new element
-        mapWalk(currCoord);
+        matrixWalk(currCoord);
     } else{
         if(DEBUG)cout << "*DeadEnd*" << endl;
         Coordinate* temp = getNextPath();
 
         if(temp){
             currCoord = (*temp);
-            mapWalk(currCoord);
+            matrixWalk(currCoord);
         } else{
             checkDoors(); // check if any doors were not visited
         }
@@ -86,7 +93,7 @@ void MapFoundation::mapWalk(Coordinate& currCoord){
 
 Coordinate* MapFoundation::getNextPath(){
     for(int i = 0; i<this->numRooms; ++i){
-        if(map->checkElementEx(this->rooms[i], ROOM)){
+        if(matrix->checkElementEx(this->rooms[i], ROOM)){
             return &this->rooms[i];
         }
     }
@@ -95,8 +102,8 @@ Coordinate* MapFoundation::getNextPath(){
 
 void MapFoundation::checkDoors(){
     for(int i = 0; i<this->numDoors; ++i){
-        if(map->checkElementEx(this->doors[i], DOOR)){
-            map->modCoordElement(this->doors[i],VISITED);
+        if(matrix->checkElementEx(this->doors[i], DOOR)){
+            matrix->modCoordElement(this->doors[i],VISITED);
             if(DEBUG)cout<<this->doors[i]<<" was missed"<<endl;
         }
     }
@@ -120,17 +127,17 @@ void MapFoundation::storeBounds(const Coordinate& currCoord){
 }
 
 void MapFoundation::filterIsolated(){
-    for(int i = 0; i< map->getDimension();++i){
-        for(int j = 0; j<map->getDimension(); ++j){
+    for(int i = 0; i< matrix->getDimension();++i){
+        for(int j = 0; j<matrix->getDimension(); ++j){
             Coordinate currCoord(j,i);
-            int out = map->get(currCoord);
-            switch(out){
+            int cell = matrix->get(currCoord);
+            switch(cell){
                 case ROOM + VISITED:
                 case DOOR + VISITED:
                     if(DEBUG)cout << currCoord << " stored " << endl;
                     break;
                 default:
-                    map->clearCoordinate(currCoord);
+                    matrix->clearCoordinate(currCoord);
                     if(DEBUG)cout << currCoord << " cleared " << endl;
                     break;
             }
@@ -142,11 +149,11 @@ void MapFoundation::printBoundsAbsolute() const{
     if(DEBUG)cout << "N: " << this->coordMostN << " | E: " << this->coordMostE << " | S: " << this->coordMostS << " | W: " << this->coordMostW << endl;
     for(int i = this->coordMostN; i<=this->coordMostS;++i){
         for(int j = this->coordMostW; j<=this->coordMostE; ++j){
-            int out = map->get(j,i);
-            if(out==0){
+            int cell = matrix->get(j,i);
+            if(cell==0){
                 cout << ".";
             } else{
-                cout << out;
+                cout << cell;
             }
         }
         cout<<endl;
@@ -154,5 +161,28 @@ void MapFoundation::printBoundsAbsolute() const{
 }
 
 void MapFoundation::print() const{
-    this->map->printEx();
+    this->matrix->printEx();
+}
+
+void MapFoundation::makeMap() {
+    if(DEBUG)cout << "N: " << this->coordMostN << " | E: " << this->coordMostE << " | S: " << this->coordMostS << " | W: " << this->coordMostW << endl;
+
+    int sizeY = coordMostS - coordMostN + 1;
+    int sizeX = coordMostE - coordMostW + 1;
+
+    if(DEBUG)cout << "sizeY = coordMostS - coordMostN + 1  == " << sizeY << endl;
+    if(DEBUG)cout << "sizeX = coordMostE - coordMostW + 1  == " << sizeX << endl;
+    this->finalMap = new Map(sizeX,sizeY);
+
+    int y = 0;
+    for(int i = this->coordMostN; i<=this->coordMostS;++i){
+        int x = 0;
+        for(int j = this->coordMostW; j<=this->coordMostE; ++j){
+            int cell = matrix->get(j,i);
+            finalMap->set(x,y,cell);
+            ++x;
+        }
+        x=0;
+        ++y;
+    }
 }

@@ -2,6 +2,7 @@
 #include "Matrix.h"
 #include "ExpandedMatrix.h"
 #include "MapFoundation.h"
+#include "Map.h"
 
 #define DEBUG_MAIN 0
 
@@ -9,30 +10,18 @@ void pBreak();
 
 int main(){
     srand(static_cast<unsigned int>(time(nullptr)));
+
     ExpandedMatrix m(99);
-    if(DEBUG_MAIN)pBreak();
-    if(DEBUG_MAIN)m.print();
-    if(DEBUG_MAIN)pBreak();
-
-    if(DEBUG_MAIN)m.printEx();
-    if(DEBUG_MAIN)pBreak();
-    if(DEBUG_MAIN)m.printConnections();
-    if(DEBUG_MAIN)pBreak();
-
     m.removeCommonLoops();
 
-    if(DEBUG_MAIN)m.print();
-    if(DEBUG_MAIN)pBreak();
-    if(DEBUG_MAIN)m.printEx();
-    if(DEBUG_MAIN)pBreak();
-    if(DEBUG_MAIN)m.printConnections();
-    if(DEBUG_MAIN)pBreak();
-
     MapFoundation mapF(&m);
-    if(DEBUG_MAIN)mapF.print();
 
+    if(DEBUG_MAIN)pBreak();
+    if(DEBUG_MAIN)mapF.printBoundsAbsolute(); // printing map foundation cropped
     pBreak();
-    mapF.printBoundsAbsolute();
+
+    Map map(&mapF);
+    map.print(); // printing full map object
     pBreak();
 
     return 0;
