@@ -5,7 +5,7 @@ enum Direction { EAST, NORTH, WEST, SOUTH, DIRECTION_COUNT };
 
 class Coordinate {
 
-    friend ostream& operator<<(ostream& os, const Coordinate& coord);
+    friend ostream& operator<<(ostream& os, const Coordinate& coord); // for cout with coordinate object
 
     private:
         int xCoord, yCoord;   // member attributes

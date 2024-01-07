@@ -32,6 +32,7 @@ class MapFoundation {
         void matrixWalk(Coordinate& currCoord);
         void filterIsolated();
         void makeMap();
+        Coordinate translateCoordMatrixToMap(const Coordinate& currCoord);
 
     public:
         MapFoundation(ExpandedMatrix* exMatrix);
@@ -42,7 +43,11 @@ class MapFoundation {
         void storeBounds(const Coordinate& currCoord);
 
         void checkDoors();
+        bool addUniqueDoor(const Coordinate& currCoord);
+        bool addUniqueRoom(const Coordinate& currCoord);
+
         void print() const;
         void printBoundsAbsolute() const;
+        bool offBoundsFinalMap(const Coordinate& currCoord) const;
 
 };

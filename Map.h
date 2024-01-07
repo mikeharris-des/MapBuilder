@@ -18,17 +18,22 @@ class Map {
         Coordinate* doors;
         int numDoors;
 
+        Coordinate mapStart;
+
     public:
         Map(int sizeX = 3, int sizeY = 3);
         Map(MapFoundation* mapFoundation);
         ~Map();
 
-        void set(int x, int y, int value);
-
         int getYDim() const;
         int getXDim() const;
         int getNumRooms() const;
         int getNumDoors() const;
+        Coordinate getStart() const;
+        int get(const Coordinate& c);
+
+        void set(int x, int y, int value);
+        void setStart(const Coordinate& c);
 
         bool offBounds(int x, int y) const;
         bool addRoom(const Coordinate& c);
@@ -36,5 +41,6 @@ class Map {
         void copyMapData(const Map& map);
 
         void print() const;
-
+        void printRooms() const;
+        void printDoors() const;
 };

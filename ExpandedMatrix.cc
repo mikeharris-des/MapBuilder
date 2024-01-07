@@ -1,6 +1,7 @@
 #include "ExpandedMatrix.h"
 
 ExpandedMatrix::ExpandedMatrix(int d):Matrix(d){
+    if(DEBUG)cout << "\ExpandedMatrix::ctor |" << __LINE__ << endl;
     this->dimensionEx = dimension + (dimension - 1); // not using d as d could be <default size
 
     this->matrixEx = new int*[this->dimensionEx];
@@ -14,6 +15,7 @@ ExpandedMatrix::ExpandedMatrix(int d):Matrix(d){
 }
 
 ExpandedMatrix::~ExpandedMatrix(){
+    if(DEBUG)cout << "\ExpandedMatrix::dtor |" << __LINE__ << endl;
     for(int i = 0; i<this->dimensionEx;++i){
         delete [] this->matrixEx[i];
     }
@@ -23,6 +25,7 @@ ExpandedMatrix::~ExpandedMatrix(){
 }
 
 void ExpandedMatrix::expandMatrix(){
+    if(DEBUG)cout << "\ExpandedMatrix::expandMatrix |" << __LINE__ << endl;
     int yC = 0; // row counter reader for reading og matrix
     int xC = 0; // column counter reader for reading og matrix
     for (int y = 0; y < this->dimensionEx; ++y) {
@@ -47,7 +50,7 @@ void ExpandedMatrix::expandMatrix(){
 }
 
 void ExpandedMatrix::buildConnections(){
-    if(DEBUG)cout << "ExpandedMatrix::buildConnections :" << __LINE__ << endl;
+    if(DEBUG)cout << "\nExpandedMatrix::buildConnections |" << __LINE__ << endl;
 
     for(int k = 0; k<numElements;++k){
         int x = coordElements[k].x();
@@ -57,18 +60,22 @@ void ExpandedMatrix::buildConnections(){
         for (int j = 0; j < DIRECTION_COUNT; ++j) {
             Coordinate c;
             Coordinate cEx;
+
             Direction dir = static_cast<Direction>(j);
             if(DEBUG)cout << "      " << dir << " |";
+
             c.setInDirection(x,y,dir);
             if(DEBUG)cout << c << " | ";
+
             if(checkElement(c, ROOM)){ // if there is a 1 in that direction make a 2 inbetween
+
                 cEx.setInDirection(2*x,2*y,dir);
                 if(DEBUG)cout << cEx;
+
                 if(!checkElementEx(cEx, DOOR)){
                     this->matrixEx[cEx.y()][cEx.x()] = DOOR;
-                    this->coordConnections[this->numConnections] = cEx;
+                    this->coordConnections[this->numConnections++] = cEx;
                     if(DEBUG)cout << cEx << " ";
-                    ++this->numConnections;
                 }else{
                     if(DEBUG) cout << " door already mapped";
                 }
@@ -96,19 +103,18 @@ void ExpandedMatrix::buildConnections(){
 2.2
 121
 */
-// common loop is where the map is generated with paths connecting all 4 elements in within a 2x2 sub matrix and is not ideal for a true unique generation
+// common loop is where the map is generated with paths connecting all 4 elements in within a 2x2 sub matrix and is more grid like with common loops vs long branches without
 void ExpandedMatrix::removeCommonLoops(){
-    if(DEBUG)cout << "removeCommonLoops"<< endl; // message showing boundry hit
+    if(DEBUG)cout << "\nExpandedMatrix::removeCommonLoops |" << __LINE__ << endl;
     for (int y = 0; y < this->dimensionEx; ++y) { // check loops after built connection & delete loops
         for (int x = 0; x < this->dimensionEx; ++x) {
             if(this->matrixEx[y][x]==0){ // need to get a coordinate that can chaeck in all directions from that point if there are doors in all connections (2s) == only at 0s or empty elements
                 Coordinate cEx;
 
-                //int resultEx[2]; // coordinate pair on getCoord
                 int countLoop = 0; // if countLoop == DIRECTION_COUNT means common loop
                 for (int j = 0; j < DIRECTION_COUNT; ++j) {
                     Direction dir = static_cast<Direction>(j);
-                    //getCoordEx(x, y, dir, resultEx);
+
                     cEx.setInDirection(x, y, dir);
                     if(checkElementEx(cEx, DOOR)){++countLoop;}
                     else{if(DEBUG)cout << "_______________BH: " << x << "," << y << " dir :" << cEx.directionToString(dir) << endl;} // message showing boundry hit}
@@ -116,7 +122,7 @@ void ExpandedMatrix::removeCommonLoops(){
                 if(countLoop==DIRECTION_COUNT){
 
                     Direction dir = static_cast<Direction>(rand()%DIRECTION_COUNT); // remove road in random location
-                    // cEx.setInDirection(x,y,dir,this->dimensionEx);
+
                     cEx.setInDirection(x, y, dir);
                     this->matrixEx[cEx.y()][cEx.x()] = 0; // remove road
                     if(!removeConnection(cEx)){
@@ -129,6 +135,7 @@ void ExpandedMatrix::removeCommonLoops(){
 }
 
 void ExpandedMatrix::modCoordElement(const Coordinate& c, int increment){
+    if(DEBUG)cout << "\nExpandedMatrix::modCoordElement |" << __LINE__ << endl;
     if(c.x()<0 || c.x() >= this->dimensionEx || c.y()<0 || c.y() >= this->dimensionEx ){ // bounds check
         return;
     }
@@ -152,14 +159,18 @@ int ExpandedMatrix::getMatrixSize(){
     return this->dimensionEx*this->dimensionEx;
 }
 
+// get cell value
 int ExpandedMatrix::get(const Coordinate& c){
+    if(DEBUG)cout << "\nExpandedMatrix::get(coord) |" << __LINE__ << endl;
     if(c.x()<0 || c.x() >= this->dimensionEx || c.y()<0 || c.y() >= this->dimensionEx ){ // bounds check
         return -1;
     }
     return this->matrixEx[c.y()][c.x()];
 }
 
+// get cell value
 int ExpandedMatrix::get(int x, int y){
+    if(DEBUG)cout << "\nExpandedMatrix::get(x,y) |" << __LINE__ << endl;
     if(x<0 || x >= this->dimensionEx || y<0 || y >= this->dimensionEx ){ // bounds check
         return -1;
     }
@@ -167,10 +178,14 @@ int ExpandedMatrix::get(int x, int y){
 }
 
 int ExpandedMatrix::getCenterCoordEx(){
+    if(DEBUG)cout << "\nExpandedMatrix::getCenterCoordEx |" << __LINE__ << endl;
     return this->dimensionEx/2;
 }
 
+// checks coordinate cell if the compare item is there return true
 bool ExpandedMatrix::checkElementEx(const Coordinate& c, int compare) const{
+    if(DEBUG)cout << "\nExpandedMatrix::checkElementEx |" << __LINE__ << endl;
+
     if(c.x()<0 || c.x() >= this->dimensionEx || c.y()<0 || c.y() >= this->dimensionEx){
         return false;
     } else{
@@ -178,12 +193,12 @@ bool ExpandedMatrix::checkElementEx(const Coordinate& c, int compare) const{
     }
 }
 
+// called from remove common loops - checks coordinate cell if the compare item is there return true
 bool ExpandedMatrix::removeConnection(const Coordinate& c){
-    if(DEBUG)cout << "  removeConnection: " << c << endl; // message showing boundry hit
-    this->matrixEx[c.y()][c.x()] = 0;
-    if(DEBUG)cout << this->matrixEx[c.y()][c.x()] << endl; // message showing boundry hit
-
-    // find index if it exists
+    if(DEBUG)cout << "\nExpandedMatrix::removeConnection: " << c << endl; // message showing boundry hit
+    if(DEBUG)cout << "cell value: "<< this->matrixEx[c.y()][c.x()] << endl; // message showing boundry hit
+    this->matrixEx[c.y()][c.x()] = 0; // remove it outright
+    // find index if it exists and remove from array
     int i=0;
     bool found = false;
     for(i = 0; i<this->numConnections; ++i){
