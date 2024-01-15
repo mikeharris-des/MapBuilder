@@ -1,28 +1,61 @@
 #pragma once
 #include "defs.h"
 
-enum Direction { EAST, NORTH, WEST, SOUTH, DIRECTION_COUNT };
+namespace Direction {
 
-class Coordinate {
+    enum Value { EAST, NORTH, WEST, SOUTH, DIRECTION_COUNT };
 
-    friend ostream& operator<<(ostream& os, const Coordinate& coord); // for cout with coordinate object
+    string toString(Value dir);
 
-    private:
-        int xCoord, yCoord;   // member attributes
-    public:
-        Coordinate(int x=-1, int y=-1);
-        int x() const {return this->xCoord;} // getter for x
-        int y() const {return this->yCoord;} // getter for y
+}
 
-        void set(int x, int y); // setter for this location x/y
-        void setInDirection(int tempX, int tempY, Direction dir);
-        void setInDirection(const Coordinate& coord, Direction dir);
-        void setInDirection(const Coordinate& coord, Direction dir, int jump);
-        string directionToString(Direction dir);
-        void print() const; // print meta data
 
-        bool operator==(const Coordinate& coord) const;
+struct Coordinate{
+    int x,y;
 
-        bool compareY(const Coordinate& coord) const;
-        bool compareX(const Coordinate& coord) const;
+    Coordinate(){
+        x=y=0;
+    }
+    Coordinate(const Coordinate& c){
+        this->x = c.x;
+        this->y = c.y;
+    }
+    Coordinate(int sx, int sy){
+        this->x = sx;
+        this->y = sy;
+    }
+    void set(int sx, int sy){ // set coordinate to sx,sy cell
+        if(sx<0 || sy<0){
+            return;
+        }
+        this->x = sx;
+        this->y = sy;
+    }
+
+    void set(Direction::Value dir){ // set coordinate to +1 cell in that direction
+        switch(dir){
+            case Direction::EAST:
+                ++this->x;
+                break;
+            case Direction::NORTH:
+                --this->y;
+                break;
+            case Direction::WEST:
+                --this->x;
+                break;
+            case Direction::SOUTH:
+                ++this->y;
+                break;
+            default:
+                cout << " set invalid | LINE " << __LINE__ << endl;
+                break;
+        }
+    }
+
+    friend ostream& operator<<(ostream& os, const Coordinate& coord);
+
+    bool operator==(const Coordinate& c) const{
+        return (c.x == this->x && c.y == this->y);
+    }
+
 };

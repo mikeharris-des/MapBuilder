@@ -3,6 +3,8 @@
 #include "Coordinate.h"
 #include "MapFoundation.h"
 
+#define DEFAULT_DIMENSION 3
+
 class MapFoundation;
 
 class Map {
@@ -21,7 +23,7 @@ class Map {
         Coordinate mapStart;
 
     public:
-        Map(int sizeX = 3, int sizeY = 3);
+        Map(int sizeX = DEFAULT_DIMENSION, int sizeY = DEFAULT_DIMENSION);
         Map(MapFoundation* mapFoundation);
         ~Map();
 

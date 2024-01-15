@@ -4,7 +4,7 @@
 #include "ExpandedMatrix.h"
 #include "Map.h"
 
-#define VISITED 2
+#define MF_DEBUG 0
 
 class Map;
 
@@ -14,7 +14,7 @@ class MapFoundation {
     friend class Map; // for constructor access to member data (inheritance created issues with other objects)
 
     private:
-        ExpandedMatrix* matrix;
+        ExpandedMatrix* expandedMatrix;
 
         Coordinate* rooms;
         int numRooms;
@@ -30,7 +30,6 @@ class MapFoundation {
         Map* finalMap;
 
         void matrixWalk(Coordinate& currCoord);
-        void filterIsolated();
         void makeMap();
         Coordinate translateCoordMatrixToMap(const Coordinate& currCoord);
 
@@ -49,5 +48,7 @@ class MapFoundation {
         void print() const;
         void printBoundsAbsolute() const;
         bool offBoundsFinalMap(const Coordinate& currCoord) const;
+
+        void filterIsolated(); // remove any cell not connectected to main branch (rooms or doors unvisited)
 
 };

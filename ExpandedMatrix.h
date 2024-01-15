@@ -5,13 +5,16 @@
 #include "Matrix.h"
 
 #define DOOR 2
+#define VISITED 2
+#define EM_DEBUG 0
 
 class ExpandedMatrix : public Matrix {
     private:
-        int dimensionEx;
-        int** matrixEx;
-        Coordinate* coordConnections;
+        int dimensionExpanded;
+        int** matrixExpanded;
+
         int numConnections;
+        Coordinate* coordConnections;
 
         void expandMatrix(); // makes initial matrix of 1s & 0s randomly
         void buildConnections();
@@ -21,18 +24,19 @@ class ExpandedMatrix : public Matrix {
         ExpandedMatrix(int d = 3);
         ~ExpandedMatrix();
         void removeCommonLoops();
-        void modCoordElement(const Coordinate& c, int increment);
-        void clearCoordinate(const Coordinate& c);
+        void markCellVisited(const Coordinate& c);
+        void clearCell(const Coordinate& c);
 
-        void printEx();
-        void printConnections();
+        int getDimension() const;
+        int getNumCells() const;
 
-        int getDimension();
-        int getMatrixSize();
+        int getCenterCoordExpanded() const;
+        int get(const Coordinate& c) const;
+        int get(int x, int y) const;
 
-        int getCenterCoordEx();
-        int get(const Coordinate& c);
-        int get(int x, int y);
+        bool checkElementExpanded(const Coordinate& c, int compare) const;
+        bool offBounds(const Coordinate& c) const;
 
-        bool checkElementEx(const Coordinate& c, int compare) const;
+        void printExpanded() const;
+        void printConnections() const;
 };

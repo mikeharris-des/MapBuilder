@@ -2,12 +2,15 @@
 
 
 Map::Map(int sizeX, int sizeY){
-    if (sizeX <= 0 || sizeY <= 0) {
-        throw invalid_argument("Invalid dimensions");
-    }
+    if(DEBUG)cout << "\nMap::ctor | LINE:" << __LINE__ << endl;
 
-    this->xDim = sizeX;
-    this->yDim = sizeY;
+    if (sizeX <= 0 || sizeY <= 0) {
+        this->xDim = DEFAULT_DIMENSION;
+        this->yDim = DEFAULT_DIMENSION;
+    } else {
+        this->xDim = sizeX;
+        this->yDim = sizeY;
+    }
 
     this->mapData = new int*[sizeY];
     for(int y = 0; y<this->yDim; ++y){
@@ -23,6 +26,7 @@ Map::Map(int sizeX, int sizeY){
 
 
 Map::Map(MapFoundation* mapFoundation){
+    if(DEBUG)cout << "\nMap::copy ctor | LINE:" << __LINE__ << endl;
 
     int sizeX = mapFoundation->finalMap->getXDim();
     int sizeY = mapFoundation->finalMap->getYDim();
@@ -50,6 +54,8 @@ Map::Map(MapFoundation* mapFoundation){
 }
 
 Map::~Map(){
+    if(DEBUG)cout << "\nMap::dtor | LINE:" << __LINE__ << endl;
+
     delete [] this->doors;
     delete [] this->rooms;
 
@@ -59,76 +65,93 @@ Map::~Map(){
     delete [] this->mapData;
 }
 
-int Map::getYDim() const{
-    return this->yDim;
-}
+int Map::getYDim() const{return this->yDim;}
 
-int Map::getXDim() const{
-    return this->xDim;
-}
+int Map::getXDim() const{return this->xDim;}
 
-int Map::getNumRooms() const{
-    return this->numRooms;
-}
+int Map::getNumRooms() const{return this->numRooms;} // get number of rooms in map (1s or vertexes)
 
-int Map::getNumDoors() const{
-    return this->numDoors;
-}
+int Map::getNumDoors() const{return this->numDoors;} // get number of doors in map (2s or connections/edges between rooms/vertexes)
 
-// get starting coordinate
-Coordinate Map::getStart() const{
-    return this->mapStart;
-}
+Coordinate Map::getStart() const{return this->mapStart;} // get starting coordinate
 
 // get cell value of coordinate
 int Map::get(const Coordinate& c){
-    if(offBounds(c.x(),c.y())){return 0;}
-    return this->mapData[c.y()][c.x()];
+    if( offBounds(c.x,c.y) ){
+        cout << "Map::get OFF BOUNDS" << endl;
+        return 0;
+    }
+
+    return this->mapData[c.y][c.x];
 }
 
 // set these x,y values in map to the value
 void Map::set(int x, int y, int value){
-    if(offBounds(x,y)){return;}
+    if(DEBUG)cout << "\nMap::set x:" << x << " y:" << y << " to: " <<  value << " | LINE:" << __LINE__ << endl;
+
+    if( offBounds(x,y) ){
+        cout << "Map::set OFF BOUNDS" << endl;
+        return;
+    }
+
     this->mapData[y][x] = value;
 }
 
 // set starting coordinate
 void Map::setStart(const Coordinate& c){
+    if(DEBUG)cout << "\nMap::setStart " << c << " | LINE:" << __LINE__ << endl;
+
     int cell = get(c);
-    if(cell==ROOM){
+
+    if( cell == ROOM ){
         this->mapStart = c;
     } else {
         cout << " * invalid set start location: " << c << endl;
     }
 }
 
-// need to translate coords to new map
 bool Map::offBounds(int x, int y) const{
-    if(DEBUG)cout << "Map::offBounds -> x: " << x << " y: " << y << endl;
-    return (x<0||x>=this->xDim||y<0||y>=this->yDim);
+    return ( x<0 || x>=this->xDim || y<0 || y>=this->yDim );
 }
 
 // need to translate coords to new map
 bool Map::addRoom(const Coordinate& c){
-    if(DEBUG)cout << " Map::addRoom : " << c << endl;
-    if(offBounds(c.x(),c.y())){return false;}
-    if(this->numRooms>=(this->xDim*this->yDim)){return false;}
-    if(this->numRooms==0){setStart(c);} // of first add make it the start
-    this->rooms[this->numRooms++] = Coordinate(c); // copy constructor for array for
+    if(DEBUG)cout << "\nMap::addRoom " << c << " | LINE:" << __LINE__ << endl;
+    if( offBounds(c.x,c.y) ){
+        cout << "Map::addRoom OFF BOUNDS" << endl;
+        return false;
+    } // if off bounds
+    if(this->numRooms>=(this->xDim*this->yDim)){
+        cout << "Map::addRoom FULL" << endl;
+        return false;
+    } // if size is full
+
+    if(this->numRooms==0){setStart(c);} // if first item in array make it starting location
+    this->rooms[this->numRooms++] = c; // add to array
     return true;
 }
 
 // need to translate coords to new map
 bool Map::addDoor(const Coordinate& c){
-    if(DEBUG)cout << " Map::addDoor : " << c << endl;
-    if(offBounds(c.x(),c.y())){return false;}
-    if(this->numDoors>=(this->xDim*this->yDim)){return false;}
+    if(DEBUG)cout << "\nMap::addDoor " << c << " | LINE:" << __LINE__ << endl;
+    if( offBounds(c.x,c.y) ){
+        cout << "Map::addDoor OFF BOUNDS" << endl;
+        return false;
 
-    this->doors[this->numDoors++] = Coordinate(c);
+    }                        // if off bounds return
+    if(this->numDoors>=(this->xDim*this->yDim)){
+        return false;
+        cout << "Map::addDoor FULL" << endl;
+    } // if size is full
+
+    this->doors[this->numDoors++] = c; // add to array
     return true;
 }
 
+
 void Map::copyMapData(const Map& map){
+    if(DEBUG)cout << "\nMap::copyMapData | LINE:" << __LINE__ << endl;
+
     if( this->xDim != map.getXDim() || this->yDim!= map.getYDim() ){
         string error = "Map::copyMapData Dimension mismatch of map to copy ";
         throw error;
@@ -153,21 +176,23 @@ void Map::copyMapData(const Map& map){
 // print full map with the center location emphasized as @ char
 void Map::print() const{
     Coordinate c = getStart();
-    int cx = c.x();
-    int cy = c.y();
+
     for(int y = 0; y<this->yDim;++y){
         for(int x = 0; x<this->xDim;++x){
+
             if(this->mapData[y][x]==0){cout << ".";}
             else{
-                if(cx==x && cy==y){
+                if(c.x==x && c.y==y){
                     cout << "@";    // print start location
                 }else{
                     cout << this->mapData[y][x];
                 }
             }
+
         }
         cout << endl;
     }
+
 }
 
 void Map::printRooms() const{

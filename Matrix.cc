@@ -1,14 +1,13 @@
 #include "Matrix.h"
 
 Matrix::Matrix(int d){
+    if(d%2==0){d = d-1;} // odd constraint
     if(d<3){d = 3;} // minimum size
     this->dimension = d;
     this->matrix = new int*[d];
     for (int i = 0; i < d; ++i) {
         this->matrix[i] = new int[d]; // needs to be pointer array for memory issues of statically allocating fixed size
     }
-    this->numElements = 0;
-    this->coordElements = new Coordinate[d*d]; // dyn allocd coordinate arr
 
     buildMatrix();
 }
@@ -19,8 +18,6 @@ Matrix::Matrix(const Matrix& m){ // cp ctor
     for (int i = 0; i < m.dimension; ++i) {
         this->matrix[i] = new int[m.dimension]; // needs to be pointer array for memory issues of statically allocating fixed size
     }
-    this->numElements = 0;
-    this->coordElements = new Coordinate[m.dimension*m.dimension]; // dyn allocd coordinate arr
     buildMatrix(m);
 }
 
@@ -31,45 +28,35 @@ Matrix::~Matrix(){
     }
     delete [] this->matrix; // delete dynamically allocated 2d array
 
-    delete [] this->coordElements; // delete dynamically allocated 2d array
 }
 
+// function for building a matrix using random 1s or 0s at a cell
 void Matrix::buildMatrix(){
-    for (int i = 0; i < this->dimension; ++i) {     // rows = outer loop increments y
-        for (int j = 0; j < this->dimension; ++j) {  // cols = inner loop increments x
-            if(defaultElement(j, i)){
-                this->matrix[i][j] = ROOM; // make default elements 1 for start
+    for (int y = 0; y < this->dimension; ++y) {     // rows = outer loop increments y
+        for (int x = 0; x < this->dimension; ++x) {  // cols = inner loop increments x
+            if(defaultElement(x, y)){
+                this->matrix[y][x] = ROOM; // make default elements 1 for start
             } else{
-                this->matrix[i][j] = rand() % 2; // 0 or 1
+                this->matrix[y][x] = rand() % 2; // 0 or 1
             }
-            if(DEBUG)cout << this->matrix[i][j];
-            if(this->matrix[i][j]==ROOM){
-                this->coordElements[this->numElements].set(j,i);
-                ++this->numElements;
-            }
+            if(DEBUG)cout << this->matrix[y][x];
         }
         if(DEBUG)cout << endl;
     }
 }
 
+// copy function for building an identical matrix to m
 void Matrix::buildMatrix(const Matrix& m){
-    if(m.dimension!=this->dimension){return;}
-
-    for (int i = 0; i < this->dimension; ++i) {     // rows = outer loop increments y
-        for (int j = 0; j < this->dimension; ++j) {  // cols = inner loop increments x
-            this->matrix[i][j] = m.matrix[i][j];
-            if(this->matrix[i][j]==ROOM){
-                this->coordElements[this->numElements].set(j,i);
-                ++this->numElements;
-                if(DEBUG)cout << this->matrix[i][j] << endl;
-            } else{
-                if(DEBUG)cout << this->matrix[i][j] << endl;
-            }
+    for (int y = 0; y < this->dimension; ++y) {     // rows = outer loop increments y
+        for (int x = 0; x < this->dimension; ++x) {  // cols = inner loop increments x
+            this->matrix[y][x] = m.matrix[y][x];
+            if(DEBUG)cout << this->matrix[y][x];
         }
         if(DEBUG)cout << endl;
     }
 }
 
+// maintain the center coordinate is always a 1
 bool Matrix::defaultElement(int x, int y) const{
     int c = getCenterCoord();
     if(y == c && x == c) return true;       // yx == centre
@@ -89,22 +76,26 @@ int Matrix::getCenterCoord() const{
     return this->dimension/2;
 }
 
-
+// check c cell if compare is the value
 bool Matrix::checkElement(const Coordinate& c, int compare) const{
-    if(c.x()<0 || c.x()>=this->dimension || c.y()<0 || c.y()>=this->dimension){
-        return false;
-    } else{
-        return (this->matrix[c.y()][c.x()] == compare);
+    if( offBounds(c) ){return false;}
+    else{
+        return (this->matrix[c.y][c.x] == compare);
     }
 }
 
+// if the coordinate is out of bounds returns true -> if(offBounds.())
+bool Matrix::offBounds(const Coordinate& coord) const{
+    return ( coord.x <0 || coord.x >= this->dimension || coord.y < 0 || coord.y >= this->dimension );
+}
+
 void Matrix::print() const{
-    for (int i = 0; i < this->dimension; ++i) {     // rows = outer loop increments y
-        for (int j = 0; j < this->dimension; ++j) {  // columns = inner loop increments x
-            if(this->matrix[i][j]==0){
+    for (int y = 0; y < this->dimension; ++y) {     // rows = outer loop increments y
+        for (int x = 0; x < this->dimension; ++x) {  // cols = inner loop increments x
+            if(this->matrix[y][x]==0){
                 cout << ".";
             } else{
-                cout << this->matrix[i][j];
+                cout << this->matrix[y][x];
             }
         }
         cout << endl;

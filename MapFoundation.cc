@@ -1,42 +1,48 @@
 #include "MapFoundation.h"
 
 
+
 MapFoundation::MapFoundation(ExpandedMatrix* exMatrix){
     if(DEBUG)cout << "\nMapFoundation::ctor |" << __LINE__ << endl;
 
-    this->matrix = exMatrix;
+    this->expandedMatrix = exMatrix; // assign the base matrix of this object to one passed in constructor
 
-    this->rooms = new Coordinate[matrix->getMatrixSize()]; // dynamically allocated array of coordinate objects
+    this->rooms = new Coordinate[this->expandedMatrix->getNumCells()]; // dynamically allocated array of coordinate objects
     this->numRooms = 0;
 
-    this->doors = new Coordinate[matrix->getMatrixSize()]; // dynamically allocated array of coordinate objects
+    this->doors = new Coordinate[this->expandedMatrix->getNumCells()]; // dynamically allocated array of coordinate objects
     this->numDoors = 0;
 
-    int center = matrix->getCenterCoordEx();
+    int center = this->expandedMatrix->getCenterCoordExpanded(); // center coordinate of the matrix x==y always
     Coordinate currCoord(center,center);
 
-    // store all coord bounds as the center coord as all should be updated (minimum matrix is 5X5)
-    this->coordMostN = center;
-    this->coordMostS = center;
-    this->coordMostE = center;
-    this->coordMostW = center;
+    // store all final coord bounds as the center coord as all should be updated (minimum matrix is 5X5)
+    this->coordMostN = center; // assign min y to center y coord
+    this->coordMostS = center; // assign max y to center y coord
+    this->coordMostE = center; // assign max x to center x coord
+    this->coordMostW = center; // assign min x to center x coord
 
     this->finalMap = nullptr; // allocated in makeMap
 
-    matrixWalk(currCoord);
-    filterIsolated();
-    makeMap();
-    if(this->finalMap){
+    matrixWalk(currCoord); // recursive function to walk through map and mark all connected rooms and doors
+    filterIsolated(); // remove after any rooms or doors not visited (isolated from main branch)
+    makeMap(); // make finalMap member variable -> crops map if necessary (uses the max coordinates ENSW and crops to those)
+
+    if(this->finalMap){ // if finalMap is made
+
         Coordinate mapStart(center,center);
-        if(DEBUG)cout << " OLD CENTER " << mapStart << endl;
-        this->finalMap->setStart(translateCoordMatrixToMap(mapStart));
-        if(DEBUG)cout << " NEW START " << this->finalMap->getStart() << endl;
+        if(MF_DEBUG)cout << " OLD CENTER " << mapStart << endl;
+
+        this->finalMap->setStart(translateCoordMatrixToMap(mapStart)); // translate coordinate to new map if it is cropped -> set this previous center coordinate as start
+
+        if(MF_DEBUG)cout << " NEW START  " << this->finalMap->getStart() << endl;
     }
 
 }
 
 MapFoundation::~MapFoundation(){
     if(DEBUG)cout << "\nMapFoundation::dtor |" << __LINE__ << endl;
+
     delete [] this->rooms; // dynamically allocated array of coordinate objects
     delete [] this->doors; // dynamically allocated array of coordinate objects
 
@@ -49,87 +55,94 @@ MapFoundation::~MapFoundation(){
     Recursive function to walk through this->matrix starting at the centre coord (defaulted to a room element)
         Algorithm:
 
-            calls storeBounds();
-                * check this coordinate if its x coord is < coordMostW || > coordMostE
-                * check this coordinate if its y coord is < coordMostN || > coordMostS
-                    - if true to any 4 updates the respective member coord with new x and/or y
+            Step 1: Store bounds for cropping at the end
 
-            check all directions (ENWS) from the current coordinate
+            Step 2: Explore all directions from the current coordinate in constant order (EAST then NORTH then WEST then SOUTH)
+                2a. * mark any connected doors and their respective rooms in that direction as seen (and was not visited) by adding them to either global sets of seen doors and rooms
 
-                * check for a door 1 index away in the direction being checked
-                    - if the first door of the directional search store that direction (next recursive call will be in that direction)
-                    - if a door exists add the door to door array
-                    - move 1 index in the same direction and add that room ( garunteed to be room there from ExpandedMatrix )
+            Step 3: Mark the current room as visited if not already visited
 
-            Mark the current room as visited if not already visited
+            Step 4: Check the first door marked seen from Step 2 if it exists
+                4a. if a new door exists mark it as visited and call matrixWalk on the doors corresponding room
+                4b. if no new door exists handle dead end
 
-            check if there is a valid next direction to move to
-                * if so mark the door inbetween as visited and call matrixWalk on the room in that direction
-
-            else = deadend
-                * call getNextPath()
-                    iterates through room array if there is a room whose cell != visted return that room coordinate
-                * if getNextPath coordinate exists call matrixWalk() on that coordinate
-                * else finish recursion by checking door array if any doors were missed -> doors marked visited only if walked passed to room in direction
-
+                    Step 5: On DeadEnd Event, check the the global set of seen rooms in the order they were first seen for any unvisited rooms
+                        5a. if there exists a room seen but not visited call matrixWalk on that rooms coordinate
+                        5b. if all seen rooms are visited, ensure all seen doors were marked visited and break from recursive calling
 
 */
 void MapFoundation::matrixWalk(Coordinate& currCoord){
     if(DEBUG)cout << "\nMapFoundation::matrixWalk | " << __LINE__ << " | " << currCoord<< endl;
-    storeBounds(currCoord);
-    int nextDir = DIRECTION_COUNT;
-    bool first = true;
-    for (int i = 0; i < DIRECTION_COUNT; ++i) { // check all directions (ENWS) from curr coord
-        Direction dir = static_cast<Direction>(i);
-        Coordinate tempCoord;
 
-        int move = 1; // from current position move this many coordinate values
-        tempCoord.setInDirection(currCoord,dir,move); // move one index from the current coordinate to the direction specified
-        if(this->matrix->checkElementEx(tempCoord, DOOR)){ // if door in that direction
+    // Step 1: Store bounds for cropping at the end
+    storeBounds(currCoord); // checks the max x,y for ENSW coordinates -> store max for cropping at the end
+
+    int nextDir = Direction::DIRECTION_COUNT; // default if nextDir isnt assigned to a valid direction == dead end hit
+
+    bool first = true;
+    if(MF_DEBUG)cout << " \n____________________________  " << endl;
+    // Step 2: Explore all directions from the current coordinate in constant order (EAST then NORTH then WEST then SOUTH)
+    for (int i = 0; i < Direction::DIRECTION_COUNT; ++i) { // check all directions (ENWS) from curr coord
+        Direction::Value dir = static_cast<Direction::Value>(i);
+
+        Coordinate tempCoord(currCoord); // copy curr cord
+
+        // int move = 1; // from current position move this many coordinate values
+        tempCoord.set(dir); // move one cell from the current coordinate to the direction specified
+
+        if(MF_DEBUG)cout << currCoord << " -> " << Direction::toString(dir) << " = " << tempCoord << " ";
+        if(this->expandedMatrix->checkElementExpanded(tempCoord, DOOR)){ // if door is at that direction
             if(first){ // move consistent order direction first
                 nextDir = i; // first valid direction to move
                 first = false;
             }
-            // store seen
+            // 2a. * mark any connected doors and their respective rooms in that direction as seen (and was not visited) by adding them to either global sets of seen doors and rooms
             addUniqueDoor(tempCoord);// add door
-            ++move; // increment to +1 for the room in that direction
-            tempCoord.setInDirection(currCoord,dir,move); // set this coordinate to the coordinate in the respective direction at move number of indecees
+
+            tempCoord.set(dir); // set this coordinate to the coordinate in the respective direction to get room
             addUniqueRoom(tempCoord); // add room
+            if(MF_DEBUG)cout << endl;
 
         } else{
-            if(DEBUG)cout << "_______________BH: " << tempCoord << endl; // message showing boundry hit
+            if(MF_DEBUG)cout << " is not a door " << endl; // message showing boundry hit
         }
     }
+    if(MF_DEBUG)cout << " \n____________________________  " << endl;
 
-    // Mark the current room as visited if not already visited
-    if(matrix->checkElementEx(currCoord, ROOM)){
-        matrix->modCoordElement(currCoord,VISITED); // visit this room
+    // Step 3: Mark the current room as visited if not already visited
+    if(this->expandedMatrix->checkElementExpanded(currCoord, ROOM)){
+        if(MF_DEBUG)cout << currCoord << " MARKED VISITED " << endl;
+        this->expandedMatrix->markCellVisited(currCoord); // visit this room
+    } else {
+        if(MF_DEBUG)cout << " CURRCORD  "<< currCoord  << " = "<< this->expandedMatrix->get(currCoord) << endl;
     }
 
-    Direction dir = static_cast<Direction>(nextDir);
+    Direction::Value dir = static_cast<Direction::Value>(nextDir);
     /*
-    check if there is a valid next direction to move to
-        * if so mark the door inbetween as visited and call matrixWalk on the room in that direction
+    Step 4: Check the first door marked seen from Step 2 if it exists
+        4a. if a new door exists mark it as visited and call matrixWalk on the doors corresponding room
     */
-    if(dir!=DIRECTION_COUNT){ // in !default dir assignment (new direction assigned and not deadend)
-        // mark door visited
-        currCoord.setInDirection(currCoord,dir);
-        matrix->modCoordElement(currCoord,VISITED);
+    if( dir != Direction::DIRECTION_COUNT ){ // in !default dir assignment (new direction assigned and not deadend)
 
-        currCoord.setInDirection(currCoord,dir); // new element
-        matrixWalk(currCoord);
+        currCoord.set(dir); // increment to adjacent cell that is door
+        this->expandedMatrix->markCellVisited(currCoord); // mark door visited
 
-    } else{ // dead end
-        if(DEBUG)cout << "*DeadEnd*" << endl; // dead end hit
-        //iterates through room array if there is a room whose cell != visted return that room coordinate
-        Coordinate* temp = getNextPath();
+        currCoord.set(dir);  // increment to adjacent cell that is room
+        matrixWalk(currCoord); // recursively call walk on that coordinate that is an unvisited room
+
+    } else{ // 4b. if no new door exists handle dead end
+        if(MF_DEBUG)cout << "*DeadEnd* @" << currCoord << endl;
+
+        // Step 5: On DeadEnd Event, check the the global set of seen rooms in the order they were first seen for any unvisited rooms
+        Coordinate* temp = getNextPath();  //iterates through room array if there is a room whose cell != visted return that room coordinate
         // ^ this is a pointer to the array index not a new coordinate
-        if(temp){ // if there exists a getNextPath coordinate
+
+        if(temp){ // 5a. if there exists a room seen but not visited call matrixWalk on that rooms coordinate
             currCoord = (*temp);
             matrixWalk(currCoord); // recursive call to walk the matrix at the new coordinate (unvisited)
         } else{
-            // recursion is done
-            checkDoors(); // check if any doors (very few if any) were not visited do to bidirectional walking
+            // 5b. if all seen rooms are visited, ensure all seen doors were marked visited and break from recursive calling
+            checkDoors(); // check if any doors (very few if any) were not visited do to bidirectional walking and only marking door visited if walking through it
         }
     }
 }
@@ -137,25 +150,31 @@ void MapFoundation::matrixWalk(Coordinate& currCoord){
 // check all rooms previously seen in the consistent priority order (ENWS) if they have not been visited
 Coordinate* MapFoundation::getNextPath(){
     if(DEBUG)cout << "\nMapFoundation::getNextPath |" << __LINE__ << endl;
+
     for(int i = 0; i<this->numRooms; ++i){
-        if(matrix->checkElementEx(this->rooms[i], ROOM)){
+
+        if( this->expandedMatrix->checkElementExpanded(this->rooms[i], ROOM) ){
             return &this->rooms[i];
         }
     }
-    return nullptr;
+    return nullptr; // handled in MapFoundation::matrixWalk so no issue
 }
 
 // if any doors were not marked visited in the doors array of all visited -> used for a door initialization confirmation
 void MapFoundation::checkDoors(){
     if(DEBUG)cout << "\nMapFoundation::checkDoors |" << __LINE__ << endl;
+
     for(int i = 0; i<this->numDoors; ++i){
-        if(matrix->checkElementEx(this->doors[i], DOOR)){
-            matrix->modCoordElement(this->doors[i],VISITED);
-            if(DEBUG)cout<<this->doors[i]<<" was missed"<<endl;
+
+        if(this->expandedMatrix->checkElementExpanded(this->doors[i], DOOR)){ // if any doors != DOORS + VISITED at coordinate cell value
+
+            this->expandedMatrix->markCellVisited(this->doors[i]); //if so mark visited
+
+            if(MF_DEBUG)cout<<this->doors[i]<<" was missed"<<endl;
         }
+
     }
 }
-
 
 /*
     * check coordinate if its x coord is < coordMostW || > coordMostE
@@ -164,158 +183,198 @@ void MapFoundation::checkDoors(){
 */
 void MapFoundation::storeBounds(const Coordinate& currCoord){
     if(DEBUG)cout << "MapFoundation::storeBounds |" << __LINE__ << endl;
-    int x = currCoord.x();
-    int y = currCoord.y();
-    if(y < this->coordMostN){ // closest to y == 0; or TOP
-        this->coordMostN = y;
+
+    if(currCoord.y < this->coordMostN){ // closest to y == 0; or TOP
+        this->coordMostN = currCoord.y;
     }
-    if(y > this->coordMostS){ // closest to y == dimensionEx or BOTTOM
-        this->coordMostS = y;
+    if(currCoord.y > this->coordMostS){ // closest to y == dimensionEx or BOTTOM
+        this->coordMostS = currCoord.y;
     }
-    if(x < this->coordMostW){ // closest to x == 0; or LEFT
-        this->coordMostW = x;
+    if(currCoord.x < this->coordMostW){ // closest to x == 0; or LEFT
+        this->coordMostW = currCoord.x;
     }
-    if(x > this->coordMostE){ // closest to x == dimensionEx; or RIGHT
-        this->coordMostE = x;
+    if(currCoord.x > this->coordMostE){ // closest to x == dimensionEx; or RIGHT
+        this->coordMostE = currCoord.x;
     }
 }
 
 // add if not already present in member array add
 bool MapFoundation::addUniqueDoor(const Coordinate& currCoord){
     if(DEBUG)cout << "\nMapFoundation::addUniqueDoor |" << __LINE__ << endl;
+
+    // no bounds check ! handled in context
     for(int i = 0; i<this->numDoors;++i){
+
         if(this->doors[i]==currCoord){
-            if(DEBUG)cout << " duplicate found no door add @ "<< currCoord << endl;
+            if(MF_DEBUG)cout << " duplicate found no door add @ "<< currCoord << endl;
             return false;
         }
+
     }
     this->doors[this->numDoors++] = currCoord;
+    if(MF_DEBUG)cout << currCoord << " -> " << this->doors[this->numDoors] << " = num doors " << this->numDoors << " ";
     return true;
 }
 
 // add if not already present in member array add
 bool MapFoundation::addUniqueRoom(const Coordinate& currCoord){
     if(DEBUG)cout << "\nMapFoundation::addUniqueRoom |" << __LINE__ << endl;
+
+    // no bounds check ! handled in context
     for(int i = 0; i<this->numRooms;++i){
         if(this->rooms[i]==currCoord){
-            if(DEBUG)cout << " duplicate found no room add @ "<< currCoord<< endl;
+            if(MF_DEBUG)cout << " duplicate found no room add @ "<< currCoord<< endl;
             return false;
         }
     }
+
     this->rooms[this->numRooms++] = currCoord;
+    if(MF_DEBUG)cout << currCoord << " -> " << this->rooms[this->numRooms] << " = num rooms " << this->numRooms << " ";
+
     return true;
 }
 
 // if there is a element integer on the matrix that is not marked visited, remove it from the matrix (isolated from mapWalk)
 void MapFoundation::filterIsolated(){
     if(DEBUG)cout << "\nMapFoundation::filterIsolated |" << __LINE__ << endl;
-    for(int i = 0; i< matrix->getDimension();++i){
-        for(int j = 0; j<matrix->getDimension(); ++j){
-            Coordinate currCoord(j,i);
-            int cell = matrix->get(currCoord);
+
+    for(int y = 0; y < this->expandedMatrix->getDimension(); ++y){
+        for(int x = 0; x < this->expandedMatrix->getDimension(); ++x){
+
+            Coordinate currCoord(y,x);
+            int cell = this->expandedMatrix->get(currCoord); // get value from expanded matrix
             switch(cell){
-                case ROOM + VISITED:
-                case DOOR + VISITED:
-                    if(DEBUG)cout << currCoord << "             stored " << endl;
+                case ROOM:
+                case DOOR:
+                    this->expandedMatrix->clearCell(currCoord); // make cell 0 if isolated
+                    if(MF_DEBUG)cout << currCoord << "             cleared " << endl;
                     break;
                 default:
-                    matrix->clearCoordinate(currCoord); // make cell 0
+                    if(MF_DEBUG)cout << currCoord << "             stored " << endl;
                     break;
             }
+
         }
     }
+
 }
 
+// prints map foundation but cropped to the coordMost values
 void MapFoundation::printBoundsAbsolute() const{
     if(DEBUG)cout << "\nMapFoundation::printBoundsAbsolute |" << __LINE__ << endl;
-    if(DEBUG)cout << "N: " << this->coordMostN << " | E: " << this->coordMostE << " | S: " << this->coordMostS << " | W: " << this->coordMostW << endl;
+    if(MF_DEBUG)cout << "N: " << this->coordMostN << " | E: " << this->coordMostE << " | S: " << this->coordMostS << " | W: " << this->coordMostW << endl;
+
     for(int i = this->coordMostN; i<=this->coordMostS;++i){
         for(int j = this->coordMostW; j<=this->coordMostE; ++j){
-            int cell = matrix->get(j,i);
+
+            int cell = this->expandedMatrix->get(j,i);
             if(cell==0){
                 cout << ".";
             } else{
                 cout << cell;
             }
+
         }
         cout<<endl;
     }
+
 }
 
 void MapFoundation::print() const{
-    this->matrix->printEx();
+    this->expandedMatrix->printExpanded();
 }
 
+// creates the Map object from this mapFoundation without unnecessary building member variables or functions for abstraction and usability
+// takes the coordMost bounds and translates all of this MapFoundation matrix cropped to a newly allocated finalMap matrix object
 void MapFoundation::makeMap() {
     if(DEBUG)cout << "\nMapFoundation::makeMap |" << __LINE__ << endl;
-    if(DEBUG)cout << "N: " << this->coordMostN << " | E: " << this->coordMostE << " | S: " << this->coordMostS << " | W: " << this->coordMostW << endl;
+    if(MF_DEBUG)cout << "N: " << this->coordMostN << " | E: " << this->coordMostE << " | S: " << this->coordMostS << " | W: " << this->coordMostW << endl;
 
     int sizeY = this->coordMostS - this->coordMostN + 1; // + 1 for array 0 indexing
     int sizeX = this->coordMostE - this->coordMostW + 1;
 
-    if(DEBUG)cout << "sizeY = coordMostS - coordMostN + 1  == " << sizeY << endl;
-    if(DEBUG)cout << "sizeX = coordMostE - coordMostW + 1  == " << sizeX << endl;
+    if(MF_DEBUG)cout << "sizeY = coordMostS - coordMostN + 1  == " << sizeY << "   sizeX = coordMostE - coordMostW + 1  == " << sizeX << endl;
+
     this->finalMap = new Map(sizeX,sizeY);
 
-    int y = 0;
+    int y = 0; // counter for translating to finalMap y
     for(int i = this->coordMostN; i<=this->coordMostS;++i){
-        int x = 0;
+        int x = 0; // counter for translating to finalMap x
         for(int j = this->coordMostW; j<=this->coordMostE; ++j){
-            int cell = matrix->get(j,i);
+
+            int cell = this->expandedMatrix->get(j,i);
             switch(cell){   // here setting to DOOR or ROOM integer only
-                case DOOR+VISITED:
-                    this->finalMap->set(x,y,DOOR);
+
+                case (DOOR+VISITED):
+                    // is a visited door
+                    this->finalMap->set(x,y,DOOR); // change cell to any default door value desired
                     break;
-                case ROOM+VISITED:
-                    this->finalMap->set(x,y,ROOM);
+
+                case (ROOM+VISITED):
+                    // is a visited room
+                    this->finalMap->set(x,y,ROOM); // change cell to any default room value desired
                     break;
+
                 default:
-                    this->finalMap->set(x,y,cell);
+                    // should only be 0 but lets other map values pass (cell)
+                    this->finalMap->set(x,y,cell);  // change cell to any default map element value desired such as 0
                     break;
             }
-            ++x;
+            ++x; // increment x for translated map
+
         }
-        x=0;
-        ++y;
+        x=0;    // reset x for translated map
+        ++y; // increment y for translated map
     }
 
     /*
-        rooms stored in og map order bellow for purposes of ordering based on center coord(start room)
+        rooms/doors stored in og map order bellow for purposes of ordering based on center coord(start room) walking priority order East, North, West, South
     */
     for(int k = 0; k< this->numRooms; ++k){
-        if(!offBoundsFinalMap(this->rooms[k])){
+
+        if(!offBoundsFinalMap(this->rooms[k])){ // outta bounds for maxCoords
+
             Coordinate roomCoord = translateCoordMatrixToMap(this->rooms[k]); // translate coordinates to the final map bounds
-            if(DEBUG)cout << " ROOM COORD IS " << roomCoord << endl;
+            if(MF_DEBUG)cout << " ROOM COORD IS " << roomCoord << endl;
             this->finalMap->addRoom(roomCoord);
+
         } else{
-            if(DEBUG)cout << "off bounds: " << this->rooms[k] << endl;
+            if(MF_DEBUG)cout << "off bounds: " << this->rooms[k] << endl;
         }
+
     }
-    if(DEBUG)cout << "\n-------------------------------------------" << endl;
+    if(MF_DEBUG)cout << "\n-------------------------------------------" << endl;
 
 
     for(int l = 0; l< this->numDoors; ++l){
+
         if(!offBoundsFinalMap(this->doors[l])){
             Coordinate doorCoord = translateCoordMatrixToMap(this->doors[l]); // translate coordinates to the final map bounds
-            if(DEBUG)cout << " DOOR COORD IS " << doorCoord << endl;
+            if(MF_DEBUG)cout << " DOOR COORD IS " << doorCoord << endl;
             this->finalMap->addDoor(doorCoord);
+
         } else{
-            if(DEBUG)cout << "off bounds: " << this->doors[l] << endl;
+            if(MF_DEBUG)cout << "off bounds: " << this->doors[l] << endl;
         }
+
     }
 
-
 }
-//
+
+//translate the current coordinate to the cropped map coordinate
 Coordinate MapFoundation::translateCoordMatrixToMap(const Coordinate& currCoord){
     if(DEBUG)cout << "\nMapFoundation::translateCoordMatrixToMap |" << __LINE__ << endl;
-    int xRoom = currCoord.x();
-    int yRoom = currCoord.y();
-    Coordinate c(xRoom - this->coordMostW,yRoom - this->coordMostN);
-    if(DEBUG)cout << currCoord << " -> " << c;
+
+    int xRoom = currCoord.x - this->coordMostW; // takes the difference of the west most coordinate from the current coordinate
+    int yRoom = currCoord.y - this->coordMostN; // takes the difference of the north most coordinate from the current coordinate
+
+    Coordinate c(xRoom, yRoom);
+    if(MF_DEBUG)cout << currCoord << " -> " << c;
+
     return c;
 }
 
+// if off bounds for cropped map
 bool MapFoundation::offBoundsFinalMap(const Coordinate& currCoord) const{
-    return (currCoord.y()<this->coordMostN || currCoord.y()>this->coordMostS || currCoord.x()<this->coordMostW || currCoord.x()>this->coordMostE);
+    return ( currCoord.y<this->coordMostN || currCoord.y>this->coordMostS || currCoord.x<this->coordMostW || currCoord.x>this->coordMostE );
 }

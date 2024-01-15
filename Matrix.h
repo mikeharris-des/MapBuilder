@@ -10,8 +10,6 @@ class Matrix {
     protected:
         int dimension;
         int** matrix; // 2d array of coordinates?
-        int numElements;
-        Coordinate* coordElements; // dynamically allocated arr of coordinates storing in order where all 1s are in matrix
 
     private:
         void buildMatrix(); // makes initial matrix of 1s & 0s randomly
@@ -25,6 +23,8 @@ class Matrix {
 
         int getCenterCoord() const;
         bool checkElement(const Coordinate& coord, int compare) const;
+
+        bool offBounds(const Coordinate& coord) const;
 
         void print() const;
 
