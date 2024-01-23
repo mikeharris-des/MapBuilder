@@ -3,6 +3,7 @@
 #include "Coordinate.h"
 #include "MapFoundation.h"
 
+#define MAP_DEBUG 0
 #define DEFAULT_DIMENSION 3
 
 class MapFoundation;
@@ -33,6 +34,7 @@ class Map {
         int getNumDoors() const;
         Coordinate getStart() const;
         int get(const Coordinate& c);
+        Coordinate getRoom(int i) const; // returns room at index of room array
 
         void set(int x, int y, int value);
         void setStart(const Coordinate& c);

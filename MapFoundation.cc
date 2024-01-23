@@ -26,7 +26,7 @@ MapFoundation::MapFoundation(ExpandedMatrix* exMatrix){
 
     matrixWalk(currCoord); // recursive function to walk through map and mark all connected rooms and doors
     filterIsolated(); // remove after any rooms or doors not visited (isolated from main branch)
-    makeMap(); // make finalMap member variable -> crops map if necessary (uses the max coordinates ENSW and crops to those)
+    makeMap(); // make finalMap member variable -> crops map if necessary (uses the max coordinates ENSW and crops to those) -> adds extra cells to make square matrix y=x
 
     if(this->finalMap){ // if finalMap is made
 
@@ -259,50 +259,29 @@ void MapFoundation::filterIsolated(){
 
 }
 
-// prints map foundation but cropped to the coordMost values
-void MapFoundation::printBoundsAbsolute() const{
-    if(DEBUG)cout << "\nMapFoundation::printBoundsAbsolute |" << __LINE__ << endl;
-    if(MF_DEBUG)cout << "N: " << this->coordMostN << " | E: " << this->coordMostE << " | S: " << this->coordMostS << " | W: " << this->coordMostW << endl;
-
-    for(int i = this->coordMostN; i<=this->coordMostS;++i){
-        for(int j = this->coordMostW; j<=this->coordMostE; ++j){
-
-            int cell = this->expandedMatrix->get(j,i);
-            if(cell==0){
-                cout << ".";
-            } else{
-                cout << cell;
-            }
-
-        }
-        cout<<endl;
-    }
-
-}
-
-void MapFoundation::print() const{
-    this->expandedMatrix->printExpanded();
-}
-
 // creates the Map object from this mapFoundation without unnecessary building member variables or functions for abstraction and usability
 // takes the coordMost bounds and translates all of this MapFoundation matrix cropped to a newly allocated finalMap matrix object
 void MapFoundation::makeMap() {
-    if(DEBUG)cout << "\nMapFoundation::makeMap |" << __LINE__ << endl;
-    if(MF_DEBUG)cout << "N: " << this->coordMostN << " | E: " << this->coordMostE << " | S: " << this->coordMostS << " | W: " << this->coordMostW << endl;
+    if(MF_DEBUG_MAKEMAP)cout << "\nMapFoundation::makeMap |" << __LINE__ << endl;
+    if(MF_DEBUG_MAKEMAP)cout << "N: " << this->coordMostN << " | E: " << this->coordMostE << " | S: " << this->coordMostS << " | W: " << this->coordMostW << endl;
 
     int sizeY = this->coordMostS - this->coordMostN + 1; // + 1 for array 0 indexing
     int sizeX = this->coordMostE - this->coordMostW + 1;
 
-    if(MF_DEBUG)cout << "sizeY = coordMostS - coordMostN + 1  == " << sizeY << "   sizeX = coordMostE - coordMostW + 1  == " << sizeX << endl;
+    if(MAKE_SQUARE){ // if final map must be square (for rendering ui is easiest if square) (const defined in MapFoundation.h)
+        makeSquare(sizeX,sizeY); // pass in y and x dim of cropped map and take the largest one, make that both dim and translate to top left coordinate
+    }else{
+        this->finalMap = new Map(sizeX,sizeY); // make potentially skewed matrix
+    }
 
-    this->finalMap = new Map(sizeX,sizeY);
+    // this->finalMap = new Map(sizeX,sizeY);
 
     int y = 0; // counter for translating to finalMap y
     for(int i = this->coordMostN; i<=this->coordMostS;++i){
         int x = 0; // counter for translating to finalMap x
         for(int j = this->coordMostW; j<=this->coordMostE; ++j){
 
-            int cell = this->expandedMatrix->get(j,i);
+            int cell = this->expandedMatrix->get(j,i); // get will return -1 if off bounds of extended matrix member
             switch(cell){   // here setting to DOOR or ROOM integer only
 
                 case (DOOR+VISITED):
@@ -313,6 +292,10 @@ void MapFoundation::makeMap() {
                 case (ROOM+VISITED):
                     // is a visited room
                     this->finalMap->set(x,y,ROOM); // change cell to any default room value desired
+                    break;
+
+                case OFF_BOUNDS: // if this cell is off bounds of the member extended matrix is expanded to square make it default 0
+                    this->finalMap->set(x,y,0);
                     break;
 
                 default:
@@ -327,6 +310,8 @@ void MapFoundation::makeMap() {
         ++y; // increment y for translated map
     }
 
+    if(MF_DEBUG_MAKEMAP)cout << "\n-------------------------------------------" << endl;
+
     /*
         rooms/doors stored in og map order bellow for purposes of ordering based on center coord(start room) walking priority order East, North, West, South
     */
@@ -335,28 +320,56 @@ void MapFoundation::makeMap() {
         if(!offBoundsFinalMap(this->rooms[k])){ // outta bounds for maxCoords
 
             Coordinate roomCoord = translateCoordMatrixToMap(this->rooms[k]); // translate coordinates to the final map bounds
-            if(MF_DEBUG)cout << " ROOM COORD IS " << roomCoord << endl;
+            if(MF_DEBUG_MAKEMAP)cout << " ROOM COORD IS " << roomCoord << endl;
             this->finalMap->addRoom(roomCoord);
 
         } else{
-            if(MF_DEBUG)cout << "off bounds: " << this->rooms[k] << endl;
+            if(MF_DEBUG_MAKEMAP)cout << "off bounds: " << this->rooms[k] << endl;
         }
 
     }
-    if(MF_DEBUG)cout << "\n-------------------------------------------" << endl;
+    if(MF_DEBUG_MAKEMAP)cout << "\n-------------------------------------------" << endl;
 
 
     for(int l = 0; l< this->numDoors; ++l){
 
         if(!offBoundsFinalMap(this->doors[l])){
             Coordinate doorCoord = translateCoordMatrixToMap(this->doors[l]); // translate coordinates to the final map bounds
-            if(MF_DEBUG)cout << " DOOR COORD IS " << doorCoord << endl;
+            if(MF_DEBUG_MAKEMAP)cout << " DOOR COORD IS " << doorCoord << endl;
             this->finalMap->addDoor(doorCoord);
 
         } else{
-            if(MF_DEBUG)cout << "off bounds: " << this->doors[l] << endl;
+            if(MF_DEBUG_MAKEMAP)cout << "off bounds: " << this->doors[l] << endl;
         }
 
+    }
+
+}
+
+// makes the final map a square matrix translating it so the top left corner aligns with maxN & maxW coordinates in foundational map AND dimensions are equal x=y for final map
+void MapFoundation::makeSquare(int sizeX, int sizeY){
+
+    int square = (sizeY>sizeX)?sizeY:sizeX; // get larger dimension to make square
+    if(MF_DEBUG_MAKEMAP)cout << "\n square " << square << endl;
+    if(MF_DEBUG_MAKEMAP)cout << " sizeY = coordMostS - coordMostN + 1  == " << sizeY << "   sizeX = coordMostE - coordMostW + 1  == " << sizeX << endl;
+
+    // check which is bigger : extend South or East based on the opposite dimension being bigger
+    if(square==sizeY){
+        // if Y (S->N) length greater than X(W->E) modify X(W->E) to = Y by adding to East the difference
+        if(MF_DEBUG_MAKEMAP)cout << " MODX: +" << (sizeY-sizeX) << endl << " mostEast: " << this->coordMostE  << endl << " newcells right: " << (sizeY-sizeX) << "x" << sizeY << endl;
+
+        this->coordMostE += (sizeY-sizeX);      // add to E
+        this->finalMap = new Map(square,square); // make new map with modified dimensions
+
+    } else if(square==sizeX){
+        // if X(W->E) length greater than Y(S->N) modify Y(S->N) to = X by adding to South the difference
+        if(MF_DEBUG_MAKEMAP)cout << " MODY: +" << (sizeX-sizeY) << endl << " mostSouth: " << this->coordMostS << endl << " newcells bottom: " << (sizeX-sizeY) << "x" << sizeX << endl;
+
+        this->coordMostS += (sizeX-sizeY); // add to S
+        this->finalMap = new Map(square,square);// make new map with modified dimensions
+
+    } else{
+        this->finalMap = new Map(sizeX,sizeY); // if equal dimensions or issue make normal
     }
 
 }
@@ -377,4 +390,29 @@ Coordinate MapFoundation::translateCoordMatrixToMap(const Coordinate& currCoord)
 // if off bounds for cropped map
 bool MapFoundation::offBoundsFinalMap(const Coordinate& currCoord) const{
     return ( currCoord.y<this->coordMostN || currCoord.y>this->coordMostS || currCoord.x<this->coordMostW || currCoord.x>this->coordMostE );
+}
+
+// prints map foundation but cropped to the coordMost values
+void MapFoundation::printBoundsAbsolute() const{
+    if(DEBUG)cout << "\nMapFoundation::printBoundsAbsolute |" << __LINE__ << endl;
+    if(MF_DEBUG)cout << "N: " << this->coordMostN << " | E: " << this->coordMostE << " | S: " << this->coordMostS << " | W: " << this->coordMostW << endl;
+
+    for(int i = this->coordMostN; i<=this->coordMostS;++i){
+        for(int j = this->coordMostW; j<=this->coordMostE; ++j){
+
+            int cell = this->expandedMatrix->get(j,i);
+            if(cell==0){
+                cout << " .";
+            } else{
+                cout << " " << cell;
+            }
+
+        }
+        cout<<endl;
+    }
+
+}
+
+void MapFoundation::print() const{
+    this->expandedMatrix->printExpanded();
 }

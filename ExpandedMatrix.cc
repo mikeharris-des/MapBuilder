@@ -181,7 +181,7 @@ int ExpandedMatrix::getNumCells() const{
 // get cell value at coordinate
 int ExpandedMatrix::get(const Coordinate& c) const{
     if(DEBUG)cout << "\nExpandedMatrix::get(coord) "  << c << " |" << __LINE__ << endl;
-    if( offBounds(c) ){return -1;}
+    if( offBounds(c) ){return OFF_BOUNDS;}
 
     return this->matrixExpanded[c.y][c.x];
 }
@@ -190,7 +190,7 @@ int ExpandedMatrix::get(const Coordinate& c) const{
 int ExpandedMatrix::get(int x, int y) const{
     if(DEBUG)cout << "\nExpandedMatrix::get(x,y) |" << __LINE__ << endl;
 
-    if( offBounds( Coordinate(x,y) ) ){return -1;}
+    if( offBounds( Coordinate(x,y) ) ){return OFF_BOUNDS;}
 
     return this->matrixExpanded[y][x];
 }
@@ -257,9 +257,9 @@ void ExpandedMatrix::printExpanded() const{
     for (int i = 0; i < this->dimensionExpanded; ++i) {     // rows = outer loop increments y
         for (int j = 0; j < this->dimensionExpanded; ++j) {  // columns = inner loop increments x
             if(this->matrixExpanded[i][j]==0){
-                cout << ".";
+                cout << " .";
             } else{
-                cout << this->matrixExpanded[i][j];
+                cout << " "<< this->matrixExpanded[i][j];
             }
         }
         cout << endl;

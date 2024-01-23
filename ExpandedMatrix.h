@@ -7,6 +7,7 @@
 #define DOOR 2
 #define VISITED 2
 #define EM_DEBUG 0
+#define OFF_BOUNDS -1 // return int get if off bounds 
 
 class ExpandedMatrix : public Matrix {
     private:

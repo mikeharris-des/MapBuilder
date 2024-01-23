@@ -5,6 +5,10 @@
 #include "Map.h"
 
 #define MF_DEBUG 0
+#define MF_DEBUG_MAKEMAP 0
+
+#define MAKE_SQUARE 1 //    if final map must be square (for rendering ui is easiest if square) ( const used in MapFoundation::makeMap() )
+
 
 class Map;
 
@@ -30,8 +34,12 @@ class MapFoundation {
         Map* finalMap;
 
         void matrixWalk(Coordinate& currCoord);
+
         void makeMap();
+        void makeSquare(int sizeX, int sizeY);
+
         Coordinate translateCoordMatrixToMap(const Coordinate& currCoord);
+
 
     public:
         MapFoundation(ExpandedMatrix* exMatrix);

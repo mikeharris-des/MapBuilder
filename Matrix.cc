@@ -93,9 +93,9 @@ void Matrix::print() const{
     for (int y = 0; y < this->dimension; ++y) {     // rows = outer loop increments y
         for (int x = 0; x < this->dimension; ++x) {  // cols = inner loop increments x
             if(this->matrix[y][x]==0){
-                cout << ".";
+                cout << " .";
             } else{
-                cout << this->matrix[y][x];
+                cout << " " << this->matrix[y][x];
             }
         }
         cout << endl;
