@@ -16,7 +16,7 @@ int main(){
 
     //-> makes expanded matrix of size dimension x (dimension-1)    * currently not optimized for dimension > 100
     ExpandedMatrix m(dimension); // adds 2s to indicate connections between rooms
-    m.removeCommonLoops(); // removes alot of tight loops makes map with long branches and aestetic (try commenting it out)
+    m.removeCommonLoops(); // removes alot of tight loops makes map with long branches and aesthetic look (try commenting it out)
 
     // Foundation crops map and removes rooms/doors not accessible to starting location
     MapFoundation mapF(&m);
