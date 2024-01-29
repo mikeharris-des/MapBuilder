@@ -5,6 +5,7 @@
 #include "Map.h"
 
 #define DEBUG_MAIN 0
+#define SHOW_MAP_EVOLUTION 0
 
 void pBreak();
 
@@ -12,25 +13,29 @@ int main(){
     srand(static_cast<unsigned int>(time(nullptr)));
 
     // random generate base matrix of 1s or 0s size of dimension x dimension
-    int dimension = 10; // dimension will get rounded down if it is not odd
+    int dimension = 30; // dimension will get rounded down if it is not odd
 
-    //-> makes expanded matrix of size dimension x (dimension-1)    * currently not optimized for dimension > 100
+    //-> makes expanded matrix of size dimension + (dimension-1)    * currently not optimized for dimension > 100
     ExpandedMatrix m(dimension); // adds 2s to indicate connections between rooms
     m.removeCommonLoops(); // removes alot of tight loops makes map with long branches and aesthetic look (try commenting it out)
 
+    if(SHOW_MAP_EVOLUTION){
+        pBreak();
+        m.print();
+        pBreak();
+        m.printExpanded();
+    }
+
     // Foundation crops map and removes rooms/doors not accessible to starting location
     MapFoundation mapF(&m);
-    if(DEBUG_MAIN)pBreak();
-    if(DEBUG_MAIN)mapF.print(); // print map uncropped, after mapwalk, after removing of isolated elements
-
 
     // make final map object -> full map without now unusable/irrelevant member functions or variables required to build it
     Map map(&mapF);
 
-    if(DEBUG_MAIN)pBreak();
-    if(DEBUG_MAIN)map.printRooms(); // printing all room coordinates
-    if(DEBUG_MAIN)pBreak();
-    if(DEBUG_MAIN)map.printDoors(); // printing all door coordinates
+    if(SHOW_MAP_EVOLUTION){
+        pBreak();
+        mapF.print(); // print map uncropped, after mapwalk, after removing of isolated elements
+    }
 
     pBreak();
     map.print(); // print final map object
@@ -38,6 +43,13 @@ int main(){
     cout << "   SPAWN1 START @ " << map.getStart() << endl; // default starting coordinate of map
     cout << "   SPAWN2 START G " << map.getRoom(map.getNumRooms()-1) << endl; // print last room added for option to add additional element to map -> eg PLAYER 2 SPAWN
     pBreak();
+
+    if(DEBUG_MAIN){
+        pBreak();
+        map.printRooms(); // printing all room coordinates
+        pBreak();
+        map.printDoors(); // printing all door coordinates
+    }
 
     return 0;
 }

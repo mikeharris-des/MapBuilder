@@ -5,13 +5,12 @@ namespace Direction {
 
     enum Value { EAST, NORTH, WEST, SOUTH, DIRECTION_COUNT };
 
-    string toString(Value dir);
+    string toString(Value dir); // Coordinate.cc for implementation
 
 }
 
-
 struct Coordinate{
-    int x,y;
+    int x,y;            //  x,y is assumed zero index ie x: 0,1,2,3,4  for 5x5 matrix
 
     Coordinate(){
         x=y=0;
@@ -52,7 +51,7 @@ struct Coordinate{
         }
     }
 
-    friend ostream& operator<<(ostream& os, const Coordinate& coord);
+    friend ostream& operator<<(ostream& os, const Coordinate& coord); // Coordinate.cc for implementation
 
     bool operator==(const Coordinate& c) const{
         return (c.x == this->x && c.y == this->y);

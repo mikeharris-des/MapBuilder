@@ -51,31 +51,34 @@ MapFoundation::~MapFoundation(){
     }
 }
 
-/*
-    Recursive function to walk through this->matrix starting at the centre coord (defaulted to a room element)
-        Algorithm:
+/* MapFoundation::matrixWalk
 
-            Step 1: Store bounds for cropping at the end
+recursive function to traverse the matrix, starting at centre most coordinate visiting every 1 connected by atleast one 2. Handles dead ends using 'this->rooms' array member storing seen but
+not visited rooms. Moves in priority ordering of East (x+1), then North (y-1), then South (y+1), then West (x-1) from currCoord.
 
-            Step 2: Explore all directions from the current coordinate in constant order (EAST then NORTH then WEST then SOUTH)
+    Algorithm to walk through this->matrix starting at the centre coord (defaulted to a room element):
+
+            Step 1: compare x,y values of current cell to largest x,y values previously visited for cropping at the end
+
+            Step 2: Explore all directions from the current coordinate in constant order (EAST then NORTH then WEST then SOUTH or ENWS)
                 2a. * mark any connected doors and their respective rooms in that direction as seen (and was not visited) by adding them to either global sets of seen doors and rooms
 
             Step 3: Mark the current room as visited if not already visited
 
             Step 4: Check the first door marked seen from Step 2 if it exists
-                4a. if a new door exists mark it as visited and call matrixWalk on the doors corresponding room
+                4a. RECURSIVE STEP: if a new door exists mark it as visited and call matrixWalk on the doors corresponding room
                 4b. if no new door exists handle dead end
 
                     Step 5: On DeadEnd Event, check the the global set of seen rooms in the order they were first seen for any unvisited rooms
-                        5a. if there exists a room seen but not visited call matrixWalk on that rooms coordinate
-                        5b. if all seen rooms are visited, ensure all seen doors were marked visited and break from recursive calling
+                        5a. RECURSIVE STEP: if there exists a room seen but not visited call matrixWalk on that rooms coordinate
+                        5b. BASE CASE: if all seen rooms are visited, ensure all seen doors were marked visited and break from recursive calling
 
 */
 void MapFoundation::matrixWalk(Coordinate& currCoord){
     if(DEBUG)cout << "\nMapFoundation::matrixWalk | " << __LINE__ << " | " << currCoord<< endl;
 
-    // Step 1: Store bounds for cropping at the end
-    storeBounds(currCoord); // checks the max x,y for ENSW coordinates -> store max for cropping at the end
+    // Step 1: compare x,y values of current cell to largest x,y values previously visited for cropping at the end
+    storeBounds(currCoord); // checks the max x,y for ENSW coordinates
 
     int nextDir = Direction::DIRECTION_COUNT; // default if nextDir isnt assigned to a valid direction == dead end hit
 
@@ -120,7 +123,7 @@ void MapFoundation::matrixWalk(Coordinate& currCoord){
     Direction::Value dir = static_cast<Direction::Value>(nextDir);
     /*
     Step 4: Check the first door marked seen from Step 2 if it exists
-        4a. if a new door exists mark it as visited and call matrixWalk on the doors corresponding room
+        4a. RECURSIVE STEP: if a new door exists mark it as visited and call matrixWalk on the doors corresponding room
     */
     if( dir != Direction::DIRECTION_COUNT ){ // in !default dir assignment (new direction assigned and not deadend)
 
@@ -137,11 +140,11 @@ void MapFoundation::matrixWalk(Coordinate& currCoord){
         Coordinate* temp = getNextPath();  //iterates through room array if there is a room whose cell != visted return that room coordinate
         // ^ this is a pointer to the array index not a new coordinate
 
-        if(temp){ // 5a. if there exists a room seen but not visited call matrixWalk on that rooms coordinate
+        if(temp){ // 5a. RECURSIVE STEP: if there exists a room seen but not visited call matrixWalk on that rooms coordinate
             currCoord = (*temp);
             matrixWalk(currCoord); // recursive call to walk the matrix at the new coordinate (unvisited)
         } else{
-            // 5b. if all seen rooms are visited, ensure all seen doors were marked visited and break from recursive calling
+            // 5b. BASE CASE: if all seen rooms are visited, ensure all seen doors were marked visited and break from recursive calling
             checkDoors(); // check if any doors (very few if any) were not visited do to bidirectional walking and only marking door visited if walking through it
         }
     }
@@ -259,8 +262,10 @@ void MapFoundation::filterIsolated(){
 
 }
 
-// creates the Map object from this mapFoundation without unnecessary building member variables or functions for abstraction and usability
-// takes the coordMost bounds and translates all of this MapFoundation matrix cropped to a newly allocated finalMap matrix object
+/*
+takes the coordMost bounds and translates all of this MapFoundation matrix data cropped to a newly sized finalMap matrix object,
+without unnecessary building member variables or functions for abstraction
+*/
 void MapFoundation::makeMap() {
     if(MF_DEBUG_MAKEMAP)cout << "\nMapFoundation::makeMap |" << __LINE__ << endl;
     if(MF_DEBUG_MAKEMAP)cout << "N: " << this->coordMostN << " | E: " << this->coordMostE << " | S: " << this->coordMostS << " | W: " << this->coordMostW << endl;
@@ -273,8 +278,6 @@ void MapFoundation::makeMap() {
     }else{
         this->finalMap = new Map(sizeX,sizeY); // make potentially skewed matrix
     }
-
-    // this->finalMap = new Map(sizeX,sizeY);
 
     int y = 0; // counter for translating to finalMap y
     for(int i = this->coordMostN; i<=this->coordMostS;++i){
@@ -346,7 +349,11 @@ void MapFoundation::makeMap() {
 
 }
 
-// makes the final map a square matrix translating it so the top left corner aligns with maxN & maxW coordinates in foundational map AND dimensions are equal x=y for final map
+/*
+passing in y and x dimensions of the cropped map, allocates memory for the finalMap Map instance as a square matrix using the the largest of the dimensions
+and translate the corresponding mostCoord (mostSouth or mostEast) to reflect the square cropping.
+This ensures no map data is lost and also the squaring of the final map can be used consistently and easily for implementing a square gui display
+*/
 void MapFoundation::makeSquare(int sizeX, int sizeY){
 
     int square = (sizeY>sizeX)?sizeY:sizeX; // get larger dimension to make square
@@ -374,7 +381,7 @@ void MapFoundation::makeSquare(int sizeX, int sizeY){
 
 }
 
-//translate the current coordinate to the cropped map coordinate
+// takes the value at that coordinate and correctly translates it to the coordinate it should be at in the final map object after cropping and translating
 Coordinate MapFoundation::translateCoordMatrixToMap(const Coordinate& currCoord){
     if(DEBUG)cout << "\nMapFoundation::translateCoordMatrixToMap |" << __LINE__ << endl;
 
@@ -413,6 +420,7 @@ void MapFoundation::printBoundsAbsolute() const{
 
 }
 
+// prints the original expandedMatrix map but with all the isolated rooms and doors removed after a MapFoundation instance is made
 void MapFoundation::print() const{
     this->expandedMatrix->printExpanded();
 }

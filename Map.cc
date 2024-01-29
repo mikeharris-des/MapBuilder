@@ -12,10 +12,7 @@ Map::Map(int sizeX, int sizeY){
         this->yDim = sizeY;
     }
 
-    this->mapData = new int*[sizeY];
-    for(int y = 0; y<this->yDim; ++y){
-        this->mapData[y] = new int[sizeX];
-    }
+    this->mapData = new int[sizeX*sizeY];
 
     this->rooms = new Coordinate[sizeX*sizeY];
     this->numRooms = 0;
@@ -34,14 +31,10 @@ Map::Map(MapFoundation* mapFoundation){
     this->xDim = sizeX;
     this->yDim = sizeY;
 
-    this->mapData = new int*[sizeY];
-    for(int y = 0; y<this->yDim; ++y){
-        this->mapData[y] = new int[sizeX];
-    }
+    this->mapData = new int[sizeX*sizeY];
 
     this->rooms = new Coordinate[sizeX*sizeY];
     this->numRooms = 0;
-
 
     this->doors = new Coordinate[sizeX*sizeY];
     this->numDoors = 0;
@@ -49,6 +42,7 @@ Map::Map(MapFoundation* mapFoundation){
     try{
         copyMapData(*mapFoundation->finalMap);
     } catch(const string& error){
+
         cout << endl<< " * MAP: FAILED TO COPY MAP DATA * " << error << endl;
     }
 }
@@ -59,10 +53,31 @@ Map::~Map(){
     delete [] this->doors;
     delete [] this->rooms;
 
-    for(int y = 0; y<this->yDim; ++y){
-        delete [] this->mapData[y];
-    }
     delete [] this->mapData;
+}
+
+void Map::copyMapData(const Map& map){
+    if(DEBUG)cout << "\nMap::copyMapData | LINE:" << __LINE__ << endl;
+
+    if( this->xDim != map.getXDim() || this->yDim!= map.getYDim() ){
+        string error = "Map::copyMapData Dimension mismatch of map to copy ";
+        throw error;
+    }
+
+    for(int y = 0; y<this->yDim;++y){
+        for(int x = 0; x<this->xDim;++x){
+            this->mapData[ y*this->xDim + x ] = map.mapData[ y*this->xDim + x ];
+        }
+    }
+
+    for(int i = 0; i < map.numDoors; ++i){
+        addDoor(map.doors[i]);
+    }
+    for(int j = 0; j < map.numRooms; ++j){
+        addRoom(map.rooms[j]);
+    }
+
+    setStart(map.getStart()); // set the starting location to the same
 }
 
 int Map::getYDim() const{return this->yDim;}
@@ -82,7 +97,7 @@ int Map::get(const Coordinate& c){
         return 0;
     }
 
-    return this->mapData[c.y][c.x];
+    return this->mapData[ c.y*this->xDim + c.x ];
 }
 
 // returns room at index of room array
@@ -106,7 +121,7 @@ void Map::set(int x, int y, int value){
         return;
     }
 
-    this->mapData[y][x] = value;
+    this->mapData[ y*this->xDim + x ] = value;
 }
 
 // set starting coordinate
@@ -160,31 +175,6 @@ bool Map::addDoor(const Coordinate& c){
     return true;
 }
 
-
-void Map::copyMapData(const Map& map){
-    if(DEBUG)cout << "\nMap::copyMapData | LINE:" << __LINE__ << endl;
-
-    if( this->xDim != map.getXDim() || this->yDim!= map.getYDim() ){
-        string error = "Map::copyMapData Dimension mismatch of map to copy ";
-        throw error;
-    }
-
-    for(int y = 0; y<this->yDim;++y){
-        for(int x = 0; x<this->xDim;++x){
-            this->mapData[y][x] = map.mapData[y][x];
-        }
-    }
-
-    for(int i = 0; i < map.numDoors; ++i){
-        addDoor(map.doors[i]);
-    }
-    for(int j = 0; j < map.numRooms; ++j){
-        addRoom(map.rooms[j]);
-    }
-
-    setStart(map.getStart()); // set the starting location to the same
-}
-
 // print full map with the center location emphasized as @ char
 void Map::print() const{
     Coordinate c = getStart();
@@ -193,14 +183,14 @@ void Map::print() const{
     for(int y = 0; y<this->yDim;++y){
         for(int x = 0; x<this->xDim;++x){
 
-            if(this->mapData[y][x]==0){cout << " .";}
+            if(this->mapData[ y*this->xDim + x ]==0){cout << " .";}
             else{
-                if(c.x==x && c.y==y){
+                if( c.x==x && c.y==y ){
                     cout << " @";    // print start location
-                }else if(lastRoom.x==x && lastRoom.y==y){
+                }else if( lastRoom.x==x && lastRoom.y==y ){
                     cout << " G"; // print last room added for option to add additional element to map -> eg PLAYER 2 SPAWN
                 }else{
-                    cout << " "<< this->mapData[y][x];
+                    cout << " "<< this->mapData[ y*this->xDim + x ];
                 }
             }
 
