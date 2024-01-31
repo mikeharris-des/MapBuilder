@@ -4,33 +4,30 @@
 #include "MapFoundation.h"      // object bridges matrix to full map object
 #include "Map.h"
 
-#define DEBUG_MAIN 0
-#define SHOW_MAP_EVOLUTION 0
+#define SHOW_MAP_EVOLUTION 0       // if enabled will print to console the instances of the map before it is modified in each rendering phase
+#define DEBUG_MAIN 0               // if enabled will print to console the coordinates of all rooms and doors in map
 
 void pBreak();
 
 int main(){
-    srand(static_cast<unsigned int>(time(nullptr)));
+    srand(static_cast<unsigned int>(time(nullptr))); // seed random with current system time 
 
-    // random generate base matrix of 1s or 0s size of dimension x dimension
-    int dimension = 30; // dimension will get rounded down if it is not odd
+    // randomly generated base matrix of 1s or 0s size of dimension x dimension. Program Optimized for assigning dimension = 3-400 
+    int dimension = 30; // dimension will get rounded down if it is not odd 
 
-    //-> makes expanded matrix of size dimension + (dimension-1)    * currently not optimized for dimension > 100
-    ExpandedMatrix m(dimension); // adds 2s to indicate connections between rooms
-    m.removeCommonLoops(); // removes alot of tight loops makes map with long branches and aesthetic look (try commenting it out)
+    ExpandedMatrix m(dimension); // makes expanded matrix with new dimensions nxn, n = dimension + (dimension-1)
+    m.removeCommonLoops(); // removes a random 2 on for a room that has four 2s adjacent to it. Makes an aestetic looking map, try commenting it out 
 
-    if(SHOW_MAP_EVOLUTION){
+    if(SHOW_MAP_EVOLUTION){  
         pBreak();
-        m.print();
+        m.print();         // print base matrix of only 1s and 0s before expand
         pBreak();
-        m.printExpanded();
+        m.printExpanded(); // print expanded matrix of 1s 2s and 0s after expand
     }
 
-    // Foundation crops map and removes rooms/doors not accessible to starting location
-    MapFoundation mapF(&m);
+    MapFoundation mapF(&m); // Foundation crops map and removes rooms/doors not accessible to starting location
 
-    // make final map object -> full map without now unusable/irrelevant member functions or variables required to build it
-    Map map(&mapF);
+    Map map(&mapF); // make final map object: full map without now unusable/irrelevant member functions or variables required to build it
 
     if(SHOW_MAP_EVOLUTION){
         pBreak();
