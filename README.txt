@@ -13,8 +13,14 @@ TO RUN:
     run program:
         ./test
 
-    remove executable and *.o files:
-        make clean
+    LINUX OS & MAC OS
+        remove executable and *.o files:
+            make clean
+
+    WINDOWS OS
+        remove executable and *.o files:
+            make wclean
+
 --------------------------------------------------------------------------------------------------------------
 
 CONSOLE PRINTOUT ON EXECUTION:

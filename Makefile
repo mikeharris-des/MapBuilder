@@ -21,3 +21,6 @@ Coordinate.o: Coordinate.cc Coordinate.h
 
 clean:
 	rm -f *.o test
+
+wclean:
+	del -f *.o test.exe
