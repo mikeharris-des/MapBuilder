@@ -27,22 +27,20 @@ CONSOLE PRINTOUT ON EXECUTION:
 
 1s are ROOMS
 2s are doors connecting ROOMS
-'.' are zeros but printed as they are for an easy visual of the map
+'.' are zeros and are modified when printed for an easy visual of the map layout
 
-@ is the first spawn location on map at taken from the centre coordinate from the original nxn base matrix
-G represents spawn room 2 taken from the last room marked visited ( last element in the map->rooms array )
+@ is the first spawn location for this map taken from the centre coordinate from the original nxn base matrix
+G represents second spawn location taken from the last room marked visited ( last element in the map->rooms array 
 
-the map is made square nxn and all non 0 data is translated to top left for purpose of use with a gui
+the map is made square nxn and all non 0 data is translated to top left for purpose of use with a gui window.
 
 Map is randomly generated (time seeded) on each execution
-
-    [ try continuously entering ./test in console it should be different every time ]
 
 --------------------------------------------------------------------------------------------------------------
 
 ABOUT THE MAP:
 
-to modify the general map size go into test.cc and change 'dimension' value in main
+to modify the maximum generated map size, in test.cc change 'dimension' value in main() to any desired integer value.
 
 
 dimension represents the base matrix that is expanded to dimension + (dimension - 1):
@@ -70,6 +68,9 @@ change 'dimension' Note:
 
 'dimension = 400' means:
 400x400 base matrix rounded to 399x399 (for a valid centre cell) & expanded to 797x797 before cropping
+
+dimension Expanded Becomes:
+    dimension + (dimension - 1)
 
 i've tried around 100 attempts at varying dimension = 200,300,400 and have not produced a map larger
 than 100x100 after cropping. dimension >= 400 will start to take 2-3 s to execute without any debug.
