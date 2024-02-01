@@ -90,7 +90,6 @@ void MapFoundation::matrixWalk(Coordinate& currCoord){
 
         Coordinate tempCoord(currCoord); // copy curr cord
 
-        // int move = 1; // from current position move this many coordinate values
         tempCoord.set(dir); // move one cell from the current coordinate to the direction specified
 
         if(MF_DEBUG)cout << currCoord << " -> " << Direction::toString(dir) << " = " << tempCoord << " ";
