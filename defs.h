@@ -4,7 +4,6 @@
 #include <ctime>    // for time
 #include <string>
 
-#define DEBUG 0     // alot of printout try with smallest matrix size and increment up by 1
-#define DEBUG2 0
+#define DEBUG 0    // alot of printout try with smallest (n x n = 3 x 3) dimension size for map object 
 
 using namespace std;

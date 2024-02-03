@@ -1,178 +1,172 @@
 #include "MapFoundation.h"
 
-
+// TODO
 
 MapFoundation::MapFoundation(ExpandedMatrix* exMatrix){
     if(DEBUG)cout << "\nMapFoundation::ctor |" << __LINE__ << endl;
 
     this->expandedMatrix = exMatrix; // assign the base matrix of this object to one passed in constructor
 
-    this->rooms = new Coordinate[this->expandedMatrix->getNumCells()]; // dynamically allocated array of coordinate objects
-    this->numRooms = 0;
-
-    this->doors = new Coordinate[this->expandedMatrix->getNumCells()]; // dynamically allocated array of coordinate objects
-    this->numDoors = 0;
-
     int center = this->expandedMatrix->getCenterCoordExpanded(); // center coordinate of the matrix x==y always
     Coordinate currCoord(center,center);
 
-    // store all final coord bounds as the center coord as all should be updated (minimum matrix is 5X5)
+    // coordMost boundries: initializes max coordinate bounds as the center coord to be compared with every x & y coordinate visited on matrix walk in graph
     this->coordMostN = center; // assign min y to center y coord
     this->coordMostS = center; // assign max y to center y coord
     this->coordMostE = center; // assign max x to center x coord
     this->coordMostW = center; // assign min x to center x coord
 
-    this->finalMap = nullptr; // allocated in makeMap
+    this->finalMatrix = nullptr; // allocated/instantiated in makeMap
+    this->finalNodes = new CoordinateArray();
+    this->finalEdges = new CoordinateArray();
 
-    matrixWalk(currCoord); // recursive function to walk through map and mark all connected rooms and doors
-    filterIsolated(); // remove after any rooms or doors not visited (isolated from main branch)
-    makeMap(); // make finalMap member variable -> crops map if necessary (uses the max coordinates ENSW and crops to those) -> adds extra cells to make square matrix y=x
+    addUniqueNode(currCoord); // add the center coord first to make it the default primary start location on map (first node of node array = default primary start location)
+    matrixWalk(currCoord); // recursive function to walk through map and mark all connected nodes and edges
 
-    if(this->finalMap){ // if finalMap is made
+    /* makeMap()
+    builds final map data
+        -> crops map if necessary using the final coordMost bounds
+        -> adds extra cells to make square n x n matrix using n = (y>x)?y:x
+        -> removes any isolated nodes or edges within final cropping but are not connected by main graph
+    */
+    makeMap();
 
-        Coordinate mapStart(center,center);
-        if(MF_DEBUG)cout << " OLD CENTER " << mapStart << endl;
-
-        this->finalMap->setStart(translateCoordMatrixToMap(mapStart)); // translate coordinate to new map if it is cropped -> set this previous center coordinate as start
-
-        if(MF_DEBUG)cout << " NEW START  " << this->finalMap->getStart() << endl;
-    }
+    if(DEBUG)cout << " OLD CENTER " << Coordinate(center,center) << " . NEW START  " << this->nodes[0] << endl; // translated starting coordinate
 
 }
 
 MapFoundation::~MapFoundation(){
     if(DEBUG)cout << "\nMapFoundation::dtor |" << __LINE__ << endl;
 
-    delete [] this->rooms; // dynamically allocated array of coordinate objects
-    delete [] this->doors; // dynamically allocated array of coordinate objects
-
-    if(this->finalMap){
-        delete this->finalMap; // dynamically allocated pointer to map object
+    delete this->finalEdges;
+    delete this->finalNodes;
+    if(this->finalMatrix){
+        delete this->finalMatrix; // dynamically allocated pointer to map object
     }
 }
 
 /* MapFoundation::matrixWalk
 
-recursive function to traverse the matrix, starting at centre most coordinate visiting every 1 connected by atleast one 2. Handles dead ends using 'this->rooms' array member storing seen but
-not visited rooms. Moves in priority ordering of East (x+1), then North (y-1), then South (y+1), then West (x-1) from currCoord.
+recursive function to traverse the matrix, starting at centre most coordinate visiting every 1 connected by atleast one 2. Handles dead ends using 'this->nodes' array member storing seen but
+not visited nodes. Moves in priority ordering of East (x+1), then North (y-1), then South (y+1), then West (x-1) from currCoord.
 
-    Algorithm to walk through this->matrix starting at the centre coord (defaulted to a room element):
+    Algorithm to walk through this->matrix starting at the centre coord (defaulted to a node element):
 
             Step 1: compare x,y values of current cell to largest x,y values previously visited for cropping at the end
 
-            Step 2: Explore all directions from the current coordinate in constant order (EAST then NORTH then WEST then SOUTH or ENWS)
-                2a. * mark any connected doors and their respective rooms in that direction as seen (and was not visited) by adding them to either global sets of seen doors and rooms
+            Step 2: Mark the current node as visited if not already visited
 
-            Step 3: Mark the current room as visited if not already visited
+            Step 3: Explore all directions from the current coordinate in constant order (EAST then NORTH then WEST then SOUTH or ENWS)
+                3a. * mark any connected edges and their respective nodes in that direction as seen (and was not visited) by adding them to either global sets of seen edges and nodes
 
-            Step 4: Check the first door marked seen from Step 2 if it exists
-                4a. RECURSIVE STEP: if a new door exists mark it as visited and call matrixWalk on the doors corresponding room
-                4b. if no new door exists handle dead end
+            Step 4: Check the first edge marked seen from Step 2 if it exists
+                4a. RECURSIVE STEP: if a new edge exists mark it as visited and call matrixWalk on the edges corresponding node
+                4b. if no new edge exists handle dead end
 
-                    Step 5: On DeadEnd Event, check the the global set of seen rooms in the order they were first seen for any unvisited rooms
-                        5a. RECURSIVE STEP: if there exists a room seen but not visited call matrixWalk on that rooms coordinate
-                        5b. BASE CASE: if all seen rooms are visited, ensure all seen doors were marked visited and break from recursive calling
+                    Step 5: On DeadEnd Event, check the the global set of seen nodes in the order they were first seen for any unvisited nodes
+                        5a. RECURSIVE STEP: if there exists a node seen but not visited call matrixWalk on that nodes coordinate
+                        5b. BASE CASE: if all seen nodes are visited, ensure all seen edges were marked visited and break from recursive calling
 
 */
+
 void MapFoundation::matrixWalk(Coordinate& currCoord){
-    if(DEBUG)cout << "\nMapFoundation::matrixWalk | " << __LINE__ << " | " << currCoord<< endl;
+    if(DEBUG)cout << "\nMapFoundation::matrixWalk | " << currCoord << " " << __LINE__ << endl;
+    if(MF_DEBUG)cout << " \n____________________________  " << endl;
 
     // Step 1: compare x,y values of current cell to largest x,y values previously visited for cropping at the end
     storeBounds(currCoord); // checks the max x,y for ENSW coordinates
 
-    int nextDir = Direction::DIRECTION_COUNT; // default if nextDir isnt assigned to a valid direction == dead end hit
-
-    bool first = true;
-    if(MF_DEBUG)cout << " \n____________________________  " << endl;
-    // Step 2: Explore all directions from the current coordinate in constant order (EAST then NORTH then WEST then SOUTH)
-    for (int i = 0; i < Direction::DIRECTION_COUNT; ++i) { // check all directions (ENWS) from curr coord
-        Direction::Value dir = static_cast<Direction::Value>(i);
-
-        Coordinate tempCoord(currCoord); // copy curr cord
-
-        tempCoord.set(dir); // move one cell from the current coordinate to the direction specified
-
-        if(MF_DEBUG)cout << currCoord << " -> " << Direction::toString(dir) << " = " << tempCoord << " ";
-        if(this->expandedMatrix->checkElementExpanded(tempCoord, DOOR)){ // if door is at that direction
-            if(first){ // move consistent order direction first
-                nextDir = i; // first valid direction to move
-                first = false;
-            }
-            // 2a. * mark any connected doors and their respective rooms in that direction as seen (and was not visited) by adding them to either global sets of seen doors and rooms
-            addUniqueDoor(tempCoord);// add door
-
-            tempCoord.set(dir); // set this coordinate to the coordinate in the respective direction to get room
-            addUniqueRoom(tempCoord); // add room
-            if(MF_DEBUG)cout << endl;
-
-        } else{
-            if(MF_DEBUG)cout << " is not a door " << endl; // message showing boundry hit
-        }
-    }
-    if(MF_DEBUG)cout << " \n____________________________  " << endl;
-
-    // Step 3: Mark the current room as visited if not already visited
-    if(this->expandedMatrix->checkElementExpanded(currCoord, ROOM)){
+    // Step 2: Mark the current node as visited if not already visited
+    if(this->expandedMatrix->checkElementExpanded(currCoord, NODE)){
         if(MF_DEBUG)cout << currCoord << " MARKED VISITED " << endl;
-        this->expandedMatrix->markCellVisited(currCoord); // visit this room
+        this->expandedMatrix->markCellVisited(currCoord); // visit this node
     } else {
         if(MF_DEBUG)cout << " CURRCORD  "<< currCoord  << " = "<< this->expandedMatrix->get(currCoord) << endl;
     }
 
+    int nextDir = Direction::DIRECTION_COUNT; // default if nextDir isnt assigned to a valid direction == dead end hit
+
+    bool first = true;
+
+    // Step 3: Explore all directions from the current coordinate in constant order (EAST then NORTH then WEST then SOUTH)
+    for (int i = 0; i < Direction::DIRECTION_COUNT; ++i) { // check all directions (ENWS) from curr coord
+        Direction::Value dir = static_cast<Direction::Value>(i);
+
+        Coordinate tempCoord(currCoord); // copy curr cord
+        tempCoord.set(dir); // move one cell from the current coordinate to the direction specified
+
+        if(MF_DEBUG)cout << currCoord << " -> " << Direction::toString(dir) << " = " << tempCoord << " ";
+
+        if(this->expandedMatrix->checkElementExpanded(tempCoord, EDGE)){ // if edge is at that direction
+            if(first){ // move consistent order direction first
+                nextDir = i; // first valid direction to move
+                first = false;
+            }
+            // 3a. * mark any connected edges and their respective nodes in that direction as seen (and was not visited) by adding them to either global sets of seen edges and nodes
+            addUniqueEdge(tempCoord);// add edge
+
+            tempCoord.set(dir); // set this coordinate to the coordinate in the respective direction to get node
+            addUniqueNode(tempCoord); // add node
+
+        }
+        if(MF_DEBUG)cout << endl;
+    }
+    if(MF_DEBUG)cout << " \n____________________________  " << endl;
+
     Direction::Value dir = static_cast<Direction::Value>(nextDir);
     /*
-    Step 4: Check the first door marked seen from Step 2 if it exists
-        4a. RECURSIVE STEP: if a new door exists mark it as visited and call matrixWalk on the doors corresponding room
+    Step 4: Check the first edge marked seen from Step 2 if it exists
+        4a. RECURSIVE STEP: if a new edge exists mark it as visited and call matrixWalk on the edges corresponding node
     */
     if( dir != Direction::DIRECTION_COUNT ){ // in !default dir assignment (new direction assigned and not deadend)
 
-        currCoord.set(dir); // increment to adjacent cell that is door
-        this->expandedMatrix->markCellVisited(currCoord); // mark door visited
+        currCoord.set(dir); // increment to adjacent cell that is edge
+        this->expandedMatrix->markCellVisited(currCoord); // mark edge visited
 
-        currCoord.set(dir);  // increment to adjacent cell that is room
-        matrixWalk(currCoord); // recursively call walk on that coordinate that is an unvisited room
+        currCoord.set(dir);  // increment to adjacent cell that is node
+        matrixWalk(currCoord); // recursively call walk on that coordinate that is an unvisited node
 
-    } else{ // 4b. if no new door exists handle dead end
+    } else{ // 4b. if no new edge exists handle dead end
         if(MF_DEBUG)cout << "*DeadEnd* @" << currCoord << endl;
 
-        // Step 5: On DeadEnd Event, check the the global set of seen rooms in the order they were first seen for any unvisited rooms
-        Coordinate* temp = getNextPath();  //iterates through room array if there is a room whose cell != visted return that room coordinate
+        // Step 5: On DeadEnd Event, check the the global set of seen nodes in the order they were first seen for any unvisited nodes
+        Coordinate* temp = getNextPath();  //iterates through node array if there is a node whose cell != visted return that node coordinate
         // ^ this is a pointer to the array index not a new coordinate
 
-        if(temp){ // 5a. RECURSIVE STEP: if there exists a room seen but not visited call matrixWalk on that rooms coordinate
+        if(temp){ // 5a. RECURSIVE STEP: if there exists a node seen but not visited call matrixWalk on that nodes coordinate
             currCoord = (*temp);
             matrixWalk(currCoord); // recursive call to walk the matrix at the new coordinate (unvisited)
         } else{
-            // 5b. BASE CASE: if all seen rooms are visited, ensure all seen doors were marked visited and break from recursive calling
-            checkDoors(); // check if any doors (very few if any) were not visited do to bidirectional walking and only marking door visited if walking through it
+            // 5b. BASE CASE: if all seen nodes are visited, ensure all seen edges were marked visited and break from recursive calling
+            checkEdges(); // check if any edges (very few if any) were not visited do to bidirectional walking and only marking edge visited if walking through it
         }
     }
 }
 
-// check all rooms previously seen in the consistent priority order (ENWS) if they have not been visited
+// check all nodes previously seen in the consistent priority order (ENWS) if they have not been visited
 Coordinate* MapFoundation::getNextPath(){
     if(DEBUG)cout << "\nMapFoundation::getNextPath |" << __LINE__ << endl;
 
-    for(int i = 0; i<this->numRooms; ++i){
+    for(int i = 0; i<this->nodes.getSize(); ++i){
 
-        if( this->expandedMatrix->checkElementExpanded(this->rooms[i], ROOM) ){
-            return &this->rooms[i];
+        if( this->expandedMatrix->checkElementExpanded(this->nodes[i], NODE) ){
+            return &this->nodes[i];
         }
     }
     return nullptr; // handled in MapFoundation::matrixWalk so no issue
 }
 
-// if any doors were not marked visited in the doors array of all visited -> used for a door initialization confirmation
-void MapFoundation::checkDoors(){
-    if(DEBUG)cout << "\nMapFoundation::checkDoors |" << __LINE__ << endl;
+// if any edges were not marked visited in the edges array of all visited -> used for a edge initialization confirmation
+void MapFoundation::checkEdges(){
+    if(DEBUG)cout << "\nMapFoundation::checkEdges |" << __LINE__ << endl;
 
-    for(int i = 0; i<this->numDoors; ++i){
+    for(int i = 0; i<this->edges.getSize(); ++i){
 
-        if(this->expandedMatrix->checkElementExpanded(this->doors[i], DOOR)){ // if any doors != DOORS + VISITED at coordinate cell value
+        if(this->expandedMatrix->checkElementExpanded(this->edges[i], EDGE)){ // if any edges != EDGE + VISITED at coordinate cell value
 
-            this->expandedMatrix->markCellVisited(this->doors[i]); //if so mark visited
+            this->expandedMatrix->markCellVisited(this->edges[i]); //if so mark visited
 
-            if(MF_DEBUG)cout<<this->doors[i]<<" was missed"<<endl;
+            if(MF_DEBUG)cout<<this->edges[i]<<" was missed"<<endl;
         }
 
     }
@@ -184,70 +178,57 @@ void MapFoundation::checkDoors(){
         - if true to any 4 updates the respective member coord with new x and/or y
 */
 void MapFoundation::storeBounds(const Coordinate& currCoord){
-    if(DEBUG)cout << "MapFoundation::storeBounds |" << __LINE__ << endl;
+    if(DEBUG)cout << "\nMapFoundation::storeBounds | " << currCoord << " " << __LINE__ << endl;
 
-    if(currCoord.y < this->coordMostN){ // closest to y == 0; or TOP
+    if(currCoord.y < this->coordMostN){ // closest to y == 0; or TOP MOST
         this->coordMostN = currCoord.y;
     }
-    if(currCoord.y > this->coordMostS){ // closest to y == dimensionEx or BOTTOM
+    if(currCoord.y > this->coordMostS){ // closest to y == y dimension of Expanded matrix or BOTTOM MOST
         this->coordMostS = currCoord.y;
     }
-    if(currCoord.x < this->coordMostW){ // closest to x == 0; or LEFT
+    if(currCoord.x < this->coordMostW){ // closest to x == 0; or LEFT MOST
         this->coordMostW = currCoord.x;
     }
-    if(currCoord.x > this->coordMostE){ // closest to x == dimensionEx; or RIGHT
+    if(currCoord.x > this->coordMostE){ // closest to x == x dimension of Expanded matrix; or RIGHT MOST
         this->coordMostE = currCoord.x;
     }
 }
 
-// add if not already present in member array add
-bool MapFoundation::addUniqueDoor(const Coordinate& currCoord){
-    if(DEBUG)cout << "\nMapFoundation::addUniqueDoor |" << __LINE__ << endl;
+// add if not already present in member container object add
+bool MapFoundation::addUniqueEdge(const Coordinate& currCoord){
+    if(DEBUG)cout << "\nMapFoundation::addUniqueEdge | " << currCoord << __LINE__ << endl;
 
-    // no bounds check ! handled in context
-    for(int i = 0; i<this->numDoors;++i){
-
-        if(this->doors[i]==currCoord){
-            if(MF_DEBUG)cout << " duplicate found no door add @ "<< currCoord << endl;
-            return false;
-        }
-
+    if(!this->edges.contains(currCoord)){
+        this->edges+=currCoord;
+        return true;
     }
-    this->doors[this->numDoors++] = currCoord;
-    if(MF_DEBUG)cout << currCoord << " -> " << this->doors[this->numDoors] << " = num doors " << this->numDoors << " ";
-    return true;
+    return false;
 }
 
-// add if not already present in member array add
-bool MapFoundation::addUniqueRoom(const Coordinate& currCoord){
-    if(DEBUG)cout << "\nMapFoundation::addUniqueRoom |" << __LINE__ << endl;
+// add if not already present in member container object add
+bool MapFoundation::addUniqueNode(const Coordinate& currCoord){
+    if(DEBUG)cout << "\nMapFoundation::addUniqueNode |" << __LINE__ << endl;
 
-    // no bounds check ! handled in context
-    for(int i = 0; i<this->numRooms;++i){
-        if(this->rooms[i]==currCoord){
-            if(MF_DEBUG)cout << " duplicate found no room add @ "<< currCoord<< endl;
-            return false;
-        }
+    if(!this->nodes.contains(currCoord)){
+        this->nodes+=currCoord;
+        return true;
     }
-
-    this->rooms[this->numRooms++] = currCoord;
-    if(MF_DEBUG)cout << currCoord << " -> " << this->rooms[this->numRooms] << " = num rooms " << this->numRooms << " ";
-
-    return true;
+    return false;
 }
+
 
 // if there is a element integer on the matrix that is not marked visited, remove it from the matrix (isolated from mapWalk)
 void MapFoundation::filterIsolated(){
     if(DEBUG)cout << "\nMapFoundation::filterIsolated |" << __LINE__ << endl;
 
-    for(int y = 0; y < this->expandedMatrix->getDimension(); ++y){
-        for(int x = 0; x < this->expandedMatrix->getDimension(); ++x){
+    for(int y = this->coordMostN; y<=this->coordMostS; ++y){
+        for(int x = this->coordMostW; x<=this->coordMostE; ++x){
 
-            Coordinate currCoord(y,x);
+            Coordinate currCoord(x,y);
             int cell = this->expandedMatrix->get(currCoord); // get value from expanded matrix
             switch(cell){
-                case ROOM:
-                case DOOR:
+                case NODE:
+                case EDGE:
                     this->expandedMatrix->clearCell(currCoord); // make cell 0 if isolated
                     if(MF_DEBUG)cout << currCoord << "             cleared " << endl;
                     break;
@@ -266,8 +247,10 @@ takes the coordMost bounds and translates all of this MapFoundation matrix data 
 without unnecessary building member variables or functions for abstraction
 */
 void MapFoundation::makeMap() {
-    if(MF_DEBUG_MAKEMAP)cout << "\nMapFoundation::makeMap |" << __LINE__ << endl;
-    if(MF_DEBUG_MAKEMAP)cout << "N: " << this->coordMostN << " | E: " << this->coordMostE << " | S: " << this->coordMostS << " | W: " << this->coordMostW << endl;
+    if(MF_DEBUG_MAKEMAP){
+        cout << "\nMapFoundation::makeMap |" << __LINE__ << endl;
+        cout << "N: " << this->coordMostN << " | E: " << this->coordMostE << " | S: " << this->coordMostS << " | W: " << this->coordMostW << endl;
+    }
 
     int sizeY = this->coordMostS - this->coordMostN + 1; // + 1 for array 0 indexing
     int sizeX = this->coordMostE - this->coordMostW + 1;
@@ -275,8 +258,10 @@ void MapFoundation::makeMap() {
     if(MAKE_SQUARE){ // if final map must be square (for rendering ui is easiest if square) (const defined in MapFoundation.h)
         makeSquare(sizeX,sizeY); // pass in y and x dim of cropped map and take the largest one, make that both dim and translate to top left coordinate
     }else{
-        this->finalMap = new Map(sizeX,sizeY); // make potentially skewed matrix
+        this->finalMatrix = new Matrix(sizeX,sizeY); // make potentially skewed matrix
     }
+
+    filterIsolated(); // remove after any nodes or edges not visited & are isolated from main branch ( will only remove elements in coordMost bounds for efficiency )
 
     int y = 0; // counter for translating to finalMap y
     for(int i = this->coordMostN; i<=this->coordMostS;++i){
@@ -284,25 +269,25 @@ void MapFoundation::makeMap() {
         for(int j = this->coordMostW; j<=this->coordMostE; ++j){
 
             int cell = this->expandedMatrix->get(j,i); // get will return -1 if off bounds of extended matrix member
-            switch(cell){   // here setting to DOOR or ROOM integer only
+            switch(cell){   // here setting to EDGE or NODE integer only
 
-                case (DOOR+VISITED):
-                    // is a visited door
-                    this->finalMap->set(x,y,DOOR); // change cell to any default door value desired
+                case (EDGE+VISITED):
+                    // is a visited edge
+                    this->finalMatrix->setCell(x,y,EDGE); // change cell to any default EDGE value desired
                     break;
 
-                case (ROOM+VISITED):
-                    // is a visited room
-                    this->finalMap->set(x,y,ROOM); // change cell to any default room value desired
+                case (NODE+VISITED):
+                    // is a visited NODE
+                    this->finalMatrix->setCell(x,y,NODE); // change cell to any default NODE value desired
                     break;
 
                 case OFF_BOUNDS: // if this cell is off bounds of the member extended matrix is expanded to square make it default 0
-                    this->finalMap->set(x,y,0);
+                    this->finalMatrix->setCell(x,y,0);
                     break;
 
                 default:
                     // should only be 0 but lets other map values pass (cell)
-                    this->finalMap->set(x,y,cell);  // change cell to any default map element value desired such as 0
+                    this->finalMatrix->setCell(x,y,cell);  // change cell to any default map element value desired such as 0
                     break;
             }
             ++x; // increment x for translated map
@@ -315,34 +300,35 @@ void MapFoundation::makeMap() {
     if(MF_DEBUG_MAKEMAP)cout << "\n-------------------------------------------" << endl;
 
     /*
-        rooms/doors stored in og map order bellow for purposes of ordering based on center coord(start room) walking priority order East, North, West, South
+        nodes/edges stored in og map order bellow for purposes of ordering based on center coord(starting node) walking priority order East, North, West, South
     */
-    for(int k = 0; k< this->numRooms; ++k){
 
-        if(!offBoundsFinalMap(this->rooms[k])){ // outta bounds for maxCoords
+    // iterates through all nodes & checks coordMost boundries to see if k coordinate is within the final cropped map, if it is translate it and add
+    for(int k = 0; k< this->nodes.getSize(); ++k){
 
-            Coordinate roomCoord = translateCoordMatrixToMap(this->rooms[k]); // translate coordinates to the final map bounds
-            if(MF_DEBUG_MAKEMAP)cout << " ROOM COORD IS " << roomCoord << endl;
-            this->finalMap->addRoom(roomCoord);
+        if( !offBoundsFinalMap(this->nodes[k]) ){    // checks coordMost boundries to see if k coordinate is within the final cropped map
 
-        } else{
-            if(MF_DEBUG_MAKEMAP)cout << "off bounds: " << this->rooms[k] << endl;
-        }
+            Coordinate nodeCoord = translateCoordMatrixToMap(this->nodes[k]); // translate coordinates to the final map bounds
+            *this->finalNodes += nodeCoord;
+
+            if(MF_DEBUG_MAKEMAP)cout << " shifted nodeCoord " << nodeCoord << endl;
+
+        } else if(MF_DEBUG_MAKEMAP)cout << "off bounds nodeCoord: " << this->nodes[k] << endl;
 
     }
     if(MF_DEBUG_MAKEMAP)cout << "\n-------------------------------------------" << endl;
 
+    // iterates through all edges & checks coordMost boundries to see if l coordinate is within the final cropped map, if it is translate it and add
+    for(int l = 0; l< this->edges.getSize(); ++l){
 
-    for(int l = 0; l< this->numDoors; ++l){
+        if( !offBoundsFinalMap(this->edges[l]) ){     // this checks coordMost boundries to see if l coordinate is within the final cropped map
 
-        if(!offBoundsFinalMap(this->doors[l])){
-            Coordinate doorCoord = translateCoordMatrixToMap(this->doors[l]); // translate coordinates to the final map bounds
-            if(MF_DEBUG_MAKEMAP)cout << " DOOR COORD IS " << doorCoord << endl;
-            this->finalMap->addDoor(doorCoord);
+            Coordinate edgeCoord = translateCoordMatrixToMap(this->edges[l]); // translate coordinates to the final map
+            *this->finalEdges += edgeCoord;
 
-        } else{
-            if(MF_DEBUG_MAKEMAP)cout << "off bounds: " << this->doors[l] << endl;
-        }
+            if(MF_DEBUG_MAKEMAP)cout << " shifted edgeCoord " << edgeCoord << endl;
+
+        } else if(MF_DEBUG_MAKEMAP)cout << " off bounds edgeCoord: " << this->edges[l] << endl;
 
     }
 
@@ -351,13 +337,16 @@ void MapFoundation::makeMap() {
 /*
 passing in y and x dimensions of the cropped map, allocates memory for the finalMap Map instance as a square matrix using the the largest of the dimensions
 and translate the corresponding mostCoord (mostSouth or mostEast) to reflect the square cropping.
-This ensures no map data is lost and also the squaring of the final map can be used consistently and easily for implementing a square gui display
+This ensures no map data is lost and also the squaring of the final map can be used consistently and easily for implementing a square gui window display
 */
 void MapFoundation::makeSquare(int sizeX, int sizeY){
 
     int square = (sizeY>sizeX)?sizeY:sizeX; // get larger dimension to make square
-    if(MF_DEBUG_MAKEMAP)cout << "\n square " << square << endl;
-    if(MF_DEBUG_MAKEMAP)cout << " sizeY = coordMostS - coordMostN + 1  == " << sizeY << "   sizeX = coordMostE - coordMostW + 1  == " << sizeX << endl;
+
+    if(MF_DEBUG_MAKEMAP){
+        cout << "\n square " << square << endl;
+        cout << " sizeY = coordMostS - coordMostN + 1  == " << sizeY << "   sizeX = coordMostE - coordMostW + 1  == " << sizeX << endl;
+    }
 
     // check which is bigger : extend South or East based on the opposite dimension being bigger
     if(square==sizeY){
@@ -365,17 +354,17 @@ void MapFoundation::makeSquare(int sizeX, int sizeY){
         if(MF_DEBUG_MAKEMAP)cout << " MODX: +" << (sizeY-sizeX) << endl << " mostEast: " << this->coordMostE  << endl << " newcells right: " << (sizeY-sizeX) << "x" << sizeY << endl;
 
         this->coordMostE += (sizeY-sizeX);      // add to E
-        this->finalMap = new Map(square,square); // make new map with modified dimensions
+        this->finalMatrix = new Matrix(square,square); // make new map with modified dimensions
 
     } else if(square==sizeX){
         // if X(W->E) length greater than Y(S->N) modify Y(S->N) to = X by adding to South the difference
         if(MF_DEBUG_MAKEMAP)cout << " MODY: +" << (sizeX-sizeY) << endl << " mostSouth: " << this->coordMostS << endl << " newcells bottom: " << (sizeX-sizeY) << "x" << sizeX << endl;
 
         this->coordMostS += (sizeX-sizeY); // add to S
-        this->finalMap = new Map(square,square);// make new map with modified dimensions
+        this->finalMatrix = new Matrix(square,square);// make new map with modified dimensions
 
     } else{
-        this->finalMap = new Map(sizeX,sizeY); // if equal dimensions or issue make normal
+        this->finalMatrix = new Matrix(sizeX,sizeY); // if equal dimensions or issue make normal
     }
 
 }
@@ -384,10 +373,10 @@ void MapFoundation::makeSquare(int sizeX, int sizeY){
 Coordinate MapFoundation::translateCoordMatrixToMap(const Coordinate& currCoord){
     if(DEBUG)cout << "\nMapFoundation::translateCoordMatrixToMap |" << __LINE__ << endl;
 
-    int xRoom = currCoord.x - this->coordMostW; // takes the difference of the west most coordinate from the current coordinate
-    int yRoom = currCoord.y - this->coordMostN; // takes the difference of the north most coordinate from the current coordinate
+    int xNode = currCoord.x - this->coordMostW; // takes the difference of the west most coordinate from the current coordinate
+    int yNode = currCoord.y - this->coordMostN; // takes the difference of the north most coordinate from the current coordinate
 
-    Coordinate c(xRoom, yRoom);
+    Coordinate c(xNode, yNode);
     if(MF_DEBUG)cout << currCoord << " -> " << c;
 
     return c;
@@ -397,6 +386,7 @@ Coordinate MapFoundation::translateCoordMatrixToMap(const Coordinate& currCoord)
 bool MapFoundation::offBoundsFinalMap(const Coordinate& currCoord) const{
     return ( currCoord.y<this->coordMostN || currCoord.y>this->coordMostS || currCoord.x<this->coordMostW || currCoord.x>this->coordMostE );
 }
+
 
 // prints map foundation but cropped to the coordMost values
 void MapFoundation::printBoundsAbsolute() const{
@@ -419,7 +409,7 @@ void MapFoundation::printBoundsAbsolute() const{
 
 }
 
-// prints the original expandedMatrix map but with all the isolated rooms and doors removed after a MapFoundation instance is made
+// prints the original expandedMatrix map but with all the isolated nodes and edges removed after a MapFoundation instance is made
 void MapFoundation::print() const{
     this->expandedMatrix->printExpanded();
 }

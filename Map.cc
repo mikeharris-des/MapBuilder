@@ -1,94 +1,106 @@
 #include "Map.h"
 
-
-Map::Map(int sizeX, int sizeY){
+Map::Map(int maxBaseDimension){
     if(DEBUG)cout << "\nMap::ctor | LINE:" << __LINE__ << endl;
 
-    if (sizeX <= 0 || sizeY <= 0) {
-        this->xDim = DEFAULT_DIMENSION;
-        this->yDim = DEFAULT_DIMENSION;
-    } else {
-        this->xDim = sizeX;
-        this->yDim = sizeY;
-    }
+    if (maxBaseDimension < DEFAULT_DIMENSION) maxBaseDimension = DEFAULT_DIMENSION;
 
-    this->mapData = new int[sizeX*sizeY];
+    ExpandedMatrix expandedMatrix(maxBaseDimension); // makes expanded matrix with new dimensions nxn, n = dimension + (dimension-1)
 
-    this->rooms = new Coordinate[sizeX*sizeY];
-    this->numRooms = 0;
+    expandedMatrix.removeCommonLoops(); // removes a random 2 on for a room that has four 2s adjacent to it. Makes an aestetic looking map, try commenting it outCLEARCOMMENT
 
-    this->doors = new Coordinate[sizeX*sizeY];
-    this->numDoors = 0;
-}
-
-
-Map::Map(MapFoundation* mapFoundation){
-    if(DEBUG)cout << "\nMap::copy ctor | LINE:" << __LINE__ << endl;
-
-    int sizeX = mapFoundation->finalMap->getXDim();
-    int sizeY = mapFoundation->finalMap->getYDim();
-
-    this->xDim = sizeX;
-    this->yDim = sizeY;
-
-    this->mapData = new int[sizeX*sizeY];
-
-    this->rooms = new Coordinate[sizeX*sizeY];
-    this->numRooms = 0;
-
-    this->doors = new Coordinate[sizeX*sizeY];
-    this->numDoors = 0;
+    MapFoundation mapFoundation(&expandedMatrix); // Foundation crops map and removes rooms/doors not accessible to starting locationCLEARCOMMENT
 
     try{
-        copyMapData(*mapFoundation->finalMap);
+        copyMapData(mapFoundation);
     } catch(const string& error){
-
         cout << endl<< " * MAP: FAILED TO COPY MAP DATA * " << error << endl;
     }
+
+    if(DEBUG)mapDebug(expandedMatrix,mapFoundation);
+
 }
+
 
 Map::~Map(){
     if(DEBUG)cout << "\nMap::dtor | LINE:" << __LINE__ << endl;
-
-    delete [] this->doors;
-    delete [] this->rooms;
-
-    delete [] this->mapData;
+    delete this->edges;
+    delete this->nodes;
+    delete this->mapData;
 }
 
-void Map::copyMapData(const Map& map){
+void Map::copyMapData(const MapFoundation& mapFoundation){
     if(DEBUG)cout << "\nMap::copyMapData | LINE:" << __LINE__ << endl;
 
-    if( this->xDim != map.getXDim() || this->yDim!= map.getYDim() ){
-        string error = "Map::copyMapData Dimension mismatch of map to copy ";
-        throw error;
-    }
+    this->mapData = new Matrix(mapFoundation.finalMatrix);
 
-    for(int y = 0; y<this->yDim;++y){
-        for(int x = 0; x<this->xDim;++x){
-            this->mapData[ y*this->xDim + x ] = map.mapData[ y*this->xDim + x ];
-        }
-    }
+    this->nodes = new CoordinateArray(mapFoundation.finalNodes);
+    this->edges = new CoordinateArray(mapFoundation.finalEdges);
 
-    for(int i = 0; i < map.numDoors; ++i){
-        addDoor(map.doors[i]);
-    }
-    for(int j = 0; j < map.numRooms; ++j){
-        addRoom(map.rooms[j]);
-    }
-
-    setStart(map.getStart()); // set the starting location to the same
+    setMapStart1((*this->nodes)[0]); // set the starting location to the same
+    setMapStart2((*this->nodes)[this->nodes->getSize()-1]); // set the starting location to the same
 }
 
-int Map::getYDim() const{return this->yDim;}
+// debug utility function
+void pBreak(){cout << endl << "-------------------------------------------------------" << endl;}
 
-int Map::getXDim() const{return this->xDim;}
+void Map::mapDebug(const ExpandedMatrix& expandedMatrix, const MapFoundation& mapFoundation){
+    cout << "\nMap::mapDebug | LINE:" << __LINE__ << endl;
 
-int Map::getNumRooms() const{return this->numRooms;} // get number of rooms in map (1s or vertexes)
+    pBreak();
+    cout << "expandedMatrix.print()" << endl;
+    expandedMatrix.print();         // print base matrix of only 1s and 0s before expandCLEARCOMMENT
 
-int Map::getNumDoors() const{return this->numDoors;} // get number of doors in map (2s or connections/edges between rooms/vertexes)
+    pBreak();
+    cout << "expandedMatrix.printExpanded()" << endl;
+    expandedMatrix.printExpanded(); // print expanded matrix of 1s 2s and 0s after expandCLEARCOMMENT
 
-Coordinate Map::getStart() const{return this->mapStart;} // get starting coordinate
+    pBreak();
+    cout << "mapFoundation.print()" << endl;
+    mapFoundation.print(); // print map uncropped, after mapwalk, after removing of isolated elements
+
+    pBreak();
+    cout << "mapFoundation.printBoundsAbsolute()" << endl;
+    mapFoundation.printBoundsAbsolute(); // print map uncropped, after mapwalk, after removing of isolated elements
+
+    pBreak();
+    cout << "mapFoundation.printFinalNodes()" << endl;
+    mapFoundation.finalNodes->print();
+
+    pBreak();
+    cout << "mapFoundation.finalMatrix->print()" << endl;
+    mapFoundation.finalMatrix->print();
+
+    if(this->nodes->getSize()>=1){
+        pBreak();
+        cout << "map.print()" << endl;
+        print();
+
+        pBreak();
+        cout << "   SPAWN1 START @ " << getMapStart1() << endl; // default starting coordinate of map or first node added to node array
+        cout << "   SPAWN2 START G " << getMapStart2() << endl; // print last node added for option to add additional element to map -> eg PLAYER 2 SPAWN
+
+        pBreak();
+        cout << "map.printNodes()" << endl;
+        printNodes();
+
+    } else{
+        cout << "| nodes arr | < 1" << endl;
+    }
+    pBreak();
+}
+
+
+int Map::getYDim() const{return this->mapData->dy;}
+
+int Map::getXDim() const{return this->mapData->dx;}
+
+int Map::getNumNodes() const{return this->nodes->getSize();} // get number of nodes in map (1s = nodes)
+
+int Map::getNumEdges() const{return this->edges->getSize();} // get number of edges in map (2s = connections/edges between nodes)
+
+Coordinate Map::getMapStart1() const{return this->start1;} // get defaulted starting coordinate 1
+Coordinate Map::getMapStart2() const{return this->start2;} // get defaulted starting coordinate 2
 
 // get cell value of coordinate
 int Map::get(const Coordinate& c){
@@ -97,18 +109,18 @@ int Map::get(const Coordinate& c){
         return 0;
     }
 
-    return this->mapData[ c.y*this->xDim + c.x ];
+    return this->mapData->getCell(c.x,c.y);
 }
 
 // returns room at index of room array
-Coordinate Map::getRoom(int i) const{
-    Coordinate room;
-    if(i<0 || this->numRooms<=i){
-        return room;
+Coordinate Map::getNodes(int i) const{
+    Coordinate node;
+    if(i<0 || this->nodes->getSize() <= i){
+        return node;
     } else{
-        room.set(this->rooms[i].x,this->rooms[i].y);
+        node.set((*this->nodes)[i].x,(*this->nodes)[i].y);
     }
-    return room;
+    return node;
 }
 
 
@@ -120,77 +132,79 @@ void Map::set(int x, int y, int value){
         if(MAP_DEBUG)cout << "Map::set OFF BOUNDS" << endl;
         return;
     }
-
-    this->mapData[ y*this->xDim + x ] = value;
+    this->mapData->setCell(x,y,value);
 }
 
-// set starting coordinate
-void Map::setStart(const Coordinate& c){
-    if(DEBUG)cout << "\nMap::setStart " << c << " | LINE:" << __LINE__ << endl;
+// set defaulted starting coordinate 1
+void Map::setMapStart1(const Coordinate& c){
+    if(DEBUG)cout << "\nMap::setMapStart1 " << c << " | LINE:" << __LINE__ << endl;
 
     int cell = get(c);
 
-    if( cell == ROOM ){
-        this->mapStart = c;
+    if( cell == NODE ){
+        this->start1 = Coordinate(c);
     } else {
-        cout << " * invalid set start location: " << c << endl; // no if debug something is really wrong if branches here
+        cout << " * invalid set start 1 location: " << c << endl; // no if debug something is really wrong if branches here
+    }
+}
+
+// set defaulted starting coordinate 1
+void Map::setMapStart2(const Coordinate& c){
+    if(DEBUG)cout << "\nMap::setMapStart2 " << c << " | LINE:" << __LINE__ << endl;
+
+    int cell = get(c);
+
+    if( cell == NODE ){
+        this->start2 = Coordinate(c);
+    } else {
+        cout << " * invalid set start 2 location: " << c << endl; // no if debug something is really wrong if branches here
     }
 }
 
 bool Map::offBounds(int x, int y) const{
-    return ( x<0 || x>=this->xDim || y<0 || y>=this->yDim );
+    return this->mapData->offBounds(x,y);
 }
 
-// need to translate coords to new map
-bool Map::addRoom(const Coordinate& c){
-    if(DEBUG)cout << "\nMap::addRoom " << c << " | LINE:" << __LINE__ << endl;
-    if( offBounds(c.x,c.y) ){
-        if(MAP_DEBUG)cout << "Map::addRoom OFF BOUNDS" << endl;
-        return false;
-    } // if off bounds
-    if(this->numRooms>=(this->xDim*this->yDim)){
-        if(MAP_DEBUG)cout << "Map::addRoom FULL" << endl;
-        return false;
-    } // if size is full
+// adds node if coordinate is unique to array and coordinate is in the boundry of the map
+bool Map::addNode(const Coordinate& c){
+    if(DEBUG)cout << "\nMap::addNode " << c << " | LINE:" << __LINE__ << endl;
 
-    if(this->numRooms==0){setStart(c);} // if first item in array make it starting location
-    this->rooms[this->numRooms++] = c; // add to array & increment after
+    if(this->nodes->contains(c) || offBounds(c.x,c.y)){
+        return false;
+    }
+
+    *this->nodes += c;
+
     return true;
 }
 
-// need to translate coords to new map
-bool Map::addDoor(const Coordinate& c){
-    if(DEBUG)cout << "\nMap::addDoor " << c << " | LINE:" << __LINE__ << endl;
-    if( offBounds(c.x,c.y) ){
-        if(MAP_DEBUG)cout << "Map::addDoor OFF BOUNDS" << endl;
-        return false;
+// adds Edge if coordinate is unique to array and coordinate is in the boundry of the map
+bool Map::addEdge(const Coordinate& c){
+    if(DEBUG)cout << "\nMap::addEdge " << c << " | LINE:" << __LINE__ << endl;
 
-    }                        // if off bounds return
-    if(this->numDoors>=(this->xDim*this->yDim)){
+    if(this->edges->contains(c) || offBounds(c.x,c.y)){
         return false;
-        if(MAP_DEBUG)cout << "Map::addDoor FULL" << endl;
-    } // if size is full
+    }
 
-    this->doors[this->numDoors++] = c; // add to array & increment after
+    *this->edges += c;
+
     return true;
 }
 
 // print full map with the center location emphasized as @ char
 void Map::print() const{
-    Coordinate c = getStart();
-    Coordinate lastRoom = this->rooms[this->numRooms-1];
 
-    for(int y = 0; y<this->yDim;++y){
-        for(int x = 0; x<this->xDim;++x){
+    for(int y = 0; y<this->mapData->dy;++y){
+        for(int x = 0; x<this->mapData->dx;++x){
 
-            if(this->mapData[ y*this->xDim + x ]==0){cout << " .";}
+            if(this->mapData->getCell(x,y)==0){cout << " .";}
             else{
-                if( c.x==x && c.y==y ){
-                    cout << " @";    // print start location
-                }else if( lastRoom.x==x && lastRoom.y==y ){
-                    cout << " G"; // print last room added for option to add additional element to map -> eg PLAYER 2 SPAWN
+                if( start1.x==x && start1.y==y ){
+                    cout << " @";    // print start 1 location as a unique character
+                }else if( start2.x==x && start2.y==y ){
+                    cout << " G";    // print start 2 location as a unique character
                 }else{
-                    cout << " "<< this->mapData[ y*this->xDim + x ];
+                    cout << " "<< this->mapData->getCell(x,y);
                 }
             }
 
@@ -200,16 +214,12 @@ void Map::print() const{
 
 }
 
-void Map::printRooms() const{
-    cout << "\nALL ROOMS" << endl;
-    for(int i = 0; i<this->numRooms;++i){
-        cout << this->rooms[i] << endl;
-    }
+void Map::printNodes() const{
+    cout << "\nALL NODES" << endl;
+    this->nodes->print();
 }
 
-void Map::printDoors() const{
-    cout << "\nALL DOORS" << endl;
-    for(int i = 0; i<this->numDoors;++i){
-        cout << this->doors[i] << endl;
-    }
+void Map::printEdges() const{
+    cout << "\nALL EDGES" << endl;
+    this->edges->print();
 }

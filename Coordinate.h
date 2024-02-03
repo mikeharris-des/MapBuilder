@@ -9,6 +9,7 @@ namespace Direction {
 
 }
 
+// struct storing two integers corresponding to 2 dimensional coordinates on a map / matrix / grid, PARAMETER ORDERING WILL ALWAYS BE X THEN Y: (x,y)
 struct Coordinate{
     int x,y;            //  x,y is assumed zero index ie x: 0,1,2,3,4  for 5x5 matrix
 
@@ -57,4 +58,28 @@ struct Coordinate{
         return (c.x == this->x && c.y == this->y);
     }
 
+};
+
+// collection class for coordinates, will dynamicly resize : see Coordinate.cc for implementation
+class CoordinateArray {
+      public:
+
+          CoordinateArray(int size = 32);               // dynamic allocation of array of coordinates
+          CoordinateArray(CoordinateArray* cArr);       // dynamic allocation of array of coordinates, creates new copies of data (static coordinate objects)
+          ~CoordinateArray();
+
+          Coordinate& operator[](int i) const;              // overload [] operator for convenient indexing / random acces to collection object, checks array bounds
+          CoordinateArray& operator+=(const Coordinate& c); // overload += operator for convenient adding to collection object, handles resizing
+          CoordinateArray& operator-=(const Coordinate& c); // overload -= operator for convenient removing from collection object, handles shifting
+
+
+          int getSize() const;
+          bool isFull() const;
+          bool contains(const Coordinate& c) const;
+          void print() const;
+
+      private:
+          int numElements;      // size of elements array
+          Coordinate* elements; // dynamic allocated array of T objects (can be pointers)
+          int backArrSize;      // number of elements in backing array (will be resized)
 };
