@@ -15,10 +15,12 @@ class Map {
 
     private:
 
-        Matrix* mapData;                     // dynamically allocated matrix 
+        Matrix* mapData;                     // dynamically allocated matrix
 
         CoordinateArray* nodes;              // dynamically allocated array of all room coordinates
         CoordinateArray* edges;              // dynamically allocated array of all door coordinates
+
+        unordered_map<Coordinate, CoordinateArray, CoordinateHashFunction> *adjacencyListTable; // hash table storing node adjacency coordinates if an attaches them at a given node in order of ENWS
 
         Coordinate start1;            // the coordinate of the spawn room ( around the centre of map ), to get another spawn use getRoom( getNumRooms()-1 )
         Coordinate start2;
@@ -57,6 +59,7 @@ class Map {
         void printNodes() const;                // prints all coordinates of nodes in map
         void printEdges() const;                // prints all coordinates of edges in map
 
+        void printAdjList() const;              // prints all coordinates of nodes adjacent to each node in map
         /*
         TODO add member/method for adjacency list CoordinateArray for each node, containing data for the edges/nodes connected to each node
         */

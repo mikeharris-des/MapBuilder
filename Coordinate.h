@@ -64,7 +64,7 @@ struct Coordinate{
 class CoordinateArray {
       public:
 
-          CoordinateArray(int size = 32);               // dynamic allocation of array of coordinates
+          CoordinateArray(int size = DEFAULT_ARRAY_SIZE);               // dynamic allocation of array of coordinates
           CoordinateArray(CoordinateArray* cArr);       // dynamic allocation of array of coordinates, creates new copies of data (static coordinate objects)
           ~CoordinateArray();
 
@@ -82,4 +82,11 @@ class CoordinateArray {
           int numElements;      // size of elements array
           Coordinate* elements; // dynamic allocated array of T objects (can be pointers)
           int backArrSize;      // number of elements in backing array (will be resized)
+};
+
+// a custom hash function for the CoordinateAdjacencyList hash table
+// https://www.geeksforgeeks.org/implement-custom-hash-functions-for-user-defined-types-in-std-unordered_map/
+struct CoordinateHashFunction
+{
+    size_t operator()(const Coordinate& c) const;
 };

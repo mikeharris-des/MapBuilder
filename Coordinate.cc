@@ -111,3 +111,10 @@ void CoordinateArray::print() const{
         cout << this->elements[i] << endl;
     }
 }
+
+// a custom hash function for the CoordinateAdjacencyList hash table
+// https://www.geeksforgeeks.org/implement-custom-hash-functions-for-user-defined-types-in-std-unordered_map/
+size_t CoordinateHashFunction::operator()(const Coordinate& c) const {
+    // combine hashes of x and y integer values using the bitwise XOR
+    return hash<int>()(c.x) ^ (hash<int>()(c.y) << 1);
+}
