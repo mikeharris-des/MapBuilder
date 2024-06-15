@@ -10,10 +10,13 @@ int main(){
         -> base dimension becomes expanded to: maxBaseDimension + (maxBaseDimension-1)
         -> randomly generated map will crop out unconnected nodes to the main map
     */
-    int maxBaseDimension = 30;  
+    int maxBaseDimension = 30;
     Map map(maxBaseDimension); // create map object
 
     printBreak();
+    map.printAdjList(); // print the adjacency list first
+    printBreak();
+
     map.print();               // print map object
     printBreak();
 

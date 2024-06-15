@@ -12,13 +12,12 @@ Map::Map(int maxBaseDimension){
     MapFoundation mapFoundation(&expandedMatrix); // Foundation crops map and removes rooms/doors not accessible to starting locationCLEARCOMMENT
 
     try{
-        copyMapData(mapFoundation);
+        copyMapData(mapFoundation); // if there is an invalid matrix from mapFoundation there will be an error thrown instead of a crash
     } catch(const string& error){
         cout << endl<< " * MAP: FAILED TO COPY MAP DATA * " << error << endl;
     }
 
     if(DEBUG)mapDebug(expandedMatrix,mapFoundation);
-
 }
 
 
@@ -27,15 +26,17 @@ Map::~Map(){
     delete this->edges;
     delete this->nodes;
     delete this->mapData;
+    delete this->adjacencyListTable;
 }
 
 void Map::copyMapData(const MapFoundation& mapFoundation){
     if(DEBUG)cout << "\nMap::copyMapData | LINE:" << __LINE__ << endl;
 
-    this->mapData = new Matrix(mapFoundation.finalMatrix);
-
-    this->nodes = new CoordinateArray(mapFoundation.finalNodes);
-    this->edges = new CoordinateArray(mapFoundation.finalEdges);
+    // the following is assigning the pointers to the map data generated in mapFoundation object
+    this->mapData = mapFoundation.finalMatrix;
+    this->nodes = mapFoundation.finalNodes;
+    this->edges = mapFoundation.finalEdges;
+    this->adjacencyListTable = mapFoundation.finalAdjacencyListTable;
 
     setMapStart1((*this->nodes)[0]); // set the starting location to the same
     setMapStart2((*this->nodes)[this->nodes->getSize()-1]); // set the starting location to the same
@@ -222,4 +223,20 @@ void Map::printNodes() const{
 void Map::printEdges() const{
     cout << "\nALL EDGES" << endl;
     this->edges->print();
+}
+
+void Map::printAdjList() const{
+    cout << "\nALL ADJACENCY DATA" << endl;
+    int counter = 1;
+    for( const auto& node : *this->adjacencyListTable ){
+        const Coordinate& coord = node.first;
+        const CoordinateArray& adjacencyList = node.second;
+
+        cout << "  " << counter++ << " : " << coord << " = ";
+        int size = adjacencyList.getSize();
+        for (int i = 0; i<size; ++i){
+            cout << adjacencyList[i] << " ";
+        }
+        cout << endl;
+    }
 }

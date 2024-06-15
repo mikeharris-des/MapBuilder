@@ -16,9 +16,11 @@ MapFoundation::MapFoundation(ExpandedMatrix* exMatrix){
     this->coordMostE = center; // assign max x to center x coord
     this->coordMostW = center; // assign min x to center x coord
 
+    // the following are all pointers passed to the final map object
     this->finalMatrix = nullptr; // allocated/instantiated in makeMap
     this->finalNodes = new CoordinateArray();
     this->finalEdges = new CoordinateArray();
+    this->finalAdjacencyListTable = new unordered_map<Coordinate, CoordinateArray, CoordinateHashFunction>;
 
     addUniqueNode(currCoord); // add the center coord first to make it the default primary start location on map (first node of node array = default primary start location)
     matrixWalk(currCoord); // recursive function to walk through map and mark all connected nodes and edges
@@ -35,14 +37,9 @@ MapFoundation::MapFoundation(ExpandedMatrix* exMatrix){
 
 }
 
+// all of the dynamically allocated ptrs to map data objects are passed to the final map object and freed there
 MapFoundation::~MapFoundation(){
     if(DEBUG)cout << "\nMapFoundation::dtor |" << __LINE__ << endl;
-
-    delete this->finalEdges;
-    delete this->finalNodes;
-    if(this->finalMatrix){
-        delete this->finalMatrix; // dynamically allocated pointer to map object
-    }
 }
 
 /* MapFoundation::matrixWalk
@@ -104,10 +101,15 @@ void MapFoundation::matrixWalk(Coordinate& currCoord){
             }
             // 3a. * mark any connected edges and their respective nodes in that direction as seen (and was not visited) by adding them to either global sets of seen edges and nodes
             addUniqueEdge(tempCoord);// add edge
-
             tempCoord.set(dir); // set this coordinate to the coordinate in the respective direction to get node
             addUniqueNode(tempCoord); // add node
 
+            addUniqueNodeToAdjacencyList(currCoord,tempCoord); // add node to adjacency list at the current node if the inbetween edge exists
+        }
+        else if(this->expandedMatrix->checkElementExpanded(tempCoord, EDGE+VISITED)){
+
+            tempCoord.set(dir); // set this coordinate to the coordinate in the respective direction to get node
+            addUniqueNodeToAdjacencyList(currCoord,tempCoord); // add node to adjacency list at the current node if the inbetween edge is already visited
         }
         if(MF_DEBUG)cout << endl;
     }
@@ -216,6 +218,18 @@ bool MapFoundation::addUniqueNode(const Coordinate& currCoord){
     return false;
 }
 
+// add to adj list table if it is unique in the given coordinates adjacency list
+bool MapFoundation::addUniqueNodeToAdjacencyList(const Coordinate& currCoord, const Coordinate& adjacentCoord) {
+    if(DEBUG)cout << "\nMapFoundation::addUniqueNodeToAdjacencyList |" << currCoord << " " << adjacentCoord <<  __LINE__ << endl;
+
+    if (!(this->adjacencyListTable[currCoord].contains(adjacentCoord))) {
+
+        if(MF_DEBUG)cout << "Adding to adjacency list: " << currCoord << " -> " << adjacentCoord;
+        this->adjacencyListTable[currCoord] += adjacentCoord; // add the node to the adjacency list even if the edge is visited an edge exists between nodes- NOTE WILL ALWAYS BE MAINTAINED IN ENSW ORDER
+        return true;
+    }
+    return false;
+}
 
 // if there is a element integer on the matrix that is not marked visited, remove it from the matrix (isolated from mapWalk)
 void MapFoundation::filterIsolated(){
@@ -230,10 +244,10 @@ void MapFoundation::filterIsolated(){
                 case NODE:
                 case EDGE:
                     this->expandedMatrix->clearCell(currCoord); // make cell 0 if isolated
-                    if(MF_DEBUG)cout << currCoord << "             cleared " << endl;
+                    if(MF_DEBUG)cout << currCoord << "     cleared from filterIsolated() " << __LINE__ << endl;
                     break;
                 default:
-                    if(MF_DEBUG)cout << currCoord << "             stored " << endl;
+                    if(MF_DEBUG)cout << currCoord << "     stored from filterIsolated() " << __LINE__ << endl;
                     break;
             }
 
@@ -303,6 +317,7 @@ void MapFoundation::makeMap() {
         nodes/edges stored in og map order bellow for purposes of ordering based on center coord(starting node) walking priority order East, North, West, South
     */
 
+
     // iterates through all nodes & checks coordMost boundries to see if k coordinate is within the final cropped map, if it is translate it and add
     for(int k = 0; k< this->nodes.getSize(); ++k){
 
@@ -312,6 +327,15 @@ void MapFoundation::makeMap() {
             *this->finalNodes += nodeCoord;
 
             if(MF_DEBUG_MAKEMAP)cout << " shifted nodeCoord " << nodeCoord << endl;
+
+            CoordinateArray& adjacencyList = this->adjacencyListTable[this->nodes[k]]; // grab the adjacency list not translated to cropped map
+            // CoordinateArray coordArray(adjacencyList.getSize()+1)); // make new coordinate array with smallest backing array size
+            int size = adjacencyList.getSize();
+            for(int index = 0; index < size; ++index) // iterate through adjacent coordinates
+            {
+                (*this->finalAdjacencyListTable)[nodeCoord] += translateCoordMatrixToMap(adjacencyList[index]); // add adjacent coordinates translated to cropped map
+            }
+            // this->finalAdjacencyListTable[nodeCoord] = coordArray; // assign temp array at the current translated coordinate
 
         } else if(MF_DEBUG_MAKEMAP)cout << "off bounds nodeCoord: " << this->nodes[k] << endl;
 
@@ -377,7 +401,9 @@ Coordinate MapFoundation::translateCoordMatrixToMap(const Coordinate& currCoord)
     int yNode = currCoord.y - this->coordMostN; // takes the difference of the north most coordinate from the current coordinate
 
     Coordinate c(xNode, yNode);
-    if(MF_DEBUG)cout << currCoord << " -> " << c;
+    if(MF_DEBUG){
+        cout << currCoord << " -translated> " << c << endl;
+    }
 
     return c;
 }
