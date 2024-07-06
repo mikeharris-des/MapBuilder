@@ -1,7 +1,7 @@
 #include "Coordinate.h"
 
 ostream& operator<<(ostream& os, const Coordinate& coord){
-    os << "(" << coord.x << "," << coord.y << ")";
+    os << "(" << setw(2) << coord.x << "," << setw(2) << coord.y << ")";
     return os;
 }
 
