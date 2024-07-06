@@ -1,8 +1,11 @@
-#include "Map.h"                // map object header file
+#include "Map.h"                                     // map object header file
 
-void printBreak();
 
-int main(){
+void printBreak(const Map& map);               // formatted console printout utility function
+
+
+int main()
+{
     srand(static_cast<unsigned int>(time(nullptr))); // seed random with current system time
 
     /*
@@ -11,22 +14,28 @@ int main(){
         -> randomly generated map will crop out unconnected nodes to the main map
     */
     int maxBaseDimension = 30;
-    Map map(maxBaseDimension); // create map object
+    Map map(maxBaseDimension);  // create map object
 
-    printBreak();
-    map.printAdjList(); // print the adjacency list first
-    printBreak();
+    printBreak(map);
+    map.printAdjList();         // print the adjacency list first
+    printBreak(map);
 
-    map.print();               // print map object
-    printBreak();
+    map.print();                // print map object
+    printBreak(map);
 
-    cout << "   SPAWN1 START @ " << map.getMapStart1() << endl; // default primary starting coordinate of map
-    cout << "   SPAWN2 START G " << map.getMapStart2() << endl; // default secondary starting coordinate of map
-    printBreak();
+    cout << "   ENTITY SPAWN1 START: @ " << map.getMapStart1() << endl;     // default primary starting coordinate of map
+    cout << "   ENTITY SPAWN2 START: G " << map.getMapStart2() << endl;     // default secondary starting coordinate of map
+    printBreak(map);
 
     return 0;
 }
 
 
-// console printout break utility function
-void printBreak(){cout << endl << "-------------------------------------------------------" << endl;}
+// formatted console printout utility function
+void printBreak(const Map& map)
+{
+    int size = 2*map.getXDim() + 3;
+    cout << endl;
+    for(int i = 0 ; i < size ; ++i) { cout << "-"; }
+    cout << endl;
+}

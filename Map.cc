@@ -195,23 +195,36 @@ bool Map::addEdge(const Coordinate& c){
 // print full map with the center location emphasized as @ char
 void Map::print() const{
 
-    for(int y = 0; y<this->mapData->dy;++y){
-        for(int x = 0; x<this->mapData->dx;++x){
+    int rowCounter = 0;
 
-            if(this->mapData->getCell(x,y)==0){cout << " .";}
+    cout << endl << "   ";
+    for(int colCounter = 0 ; colCounter < this->mapData->dx ; colCounter++) { cout << colCounter%10 << " ";}
+    cout << endl;
+
+    for(int y = 0; y<this->mapData->dy; ++y)
+    {
+        cout << endl << (rowCounter++)%10 << " ";
+
+        for(int x = 0; x<this->mapData->dx; ++x)
+        {
+            if(this->mapData->getCell(x,y)==0){ cout << " ."; }
             else{
-                if( start1.x==x && start1.y==y ){
+                if( start1.x==x && start1.y==y )
+                {
                     cout << " @";    // print start 1 location as a unique character
-                }else if( start2.x==x && start2.y==y ){
+                }
+                else if( start2.x==x && start2.y==y )
+                {
                     cout << " G";    // print start 2 location as a unique character
-                }else{
+                }
+                else
+                {
                     cout << " "<< this->mapData->getCell(x,y);
                 }
             }
-
         }
-        cout << endl;
     }
+    cout << endl;
 
 }
 
@@ -228,11 +241,14 @@ void Map::printEdges() const{
 void Map::printAdjList() const{
     cout << "\nALL ADJACENCY DATA" << endl;
     int counter = 1;
-    for( const auto& node : *this->adjacencyListTable ){
-        const Coordinate& coord = node.first;
-        const CoordinateArray& adjacencyList = node.second;
+    for (unordered_map<Coordinate, CoordinateArray>::iterator node = this->adjacencyListTable->begin(); node != this->adjacencyListTable->end(); ++node)
+    {
+    //
+    // for( const auto& node : *this->adjacencyListTable ){
+        const Coordinate& coord = node->first;
+        const CoordinateArray& adjacencyList = node->second;
 
-        cout << "  " << counter++ << " : " << coord << " = ";
+        cout << setw(5) << counter++ << " : " << coord << " = ";
         int size = adjacencyList.getSize();
         for (int i = 0; i<size; ++i){
             cout << adjacencyList[i] << " ";
