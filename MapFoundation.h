@@ -4,11 +4,6 @@
 #include "Coordinate.h"
 #include "Matrix.h"
 
-#define MF_DEBUG 0
-#define MF_DEBUG_MAKEMAP 0
-
-#define MAKE_SQUARE 1 //    if final map must be square (for rendering ui is easiest if square) ( const used in MapFoundation::makeMap() )
-
 class Map;
 
 class MapFoundation {

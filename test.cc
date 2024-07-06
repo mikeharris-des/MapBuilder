@@ -14,10 +14,16 @@ int main()
         -> randomly generated map will crop out unconnected nodes to the main map
     */
     int maxBaseDimension = 30;
-    Map map(maxBaseDimension);  // create map object
+    Map map(maxBaseDimension,5);  // create map object
 
     printBreak(map);
     map.printAdjList();         // print the adjacency list first
+    printBreak(map);
+
+    map.printNodes();
+    printBreak(map);
+
+    map.printSelectNodes();
     printBreak(map);
 
     map.print();                // print map object

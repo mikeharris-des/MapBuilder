@@ -46,8 +46,9 @@ CoordinateArray::~CoordinateArray(){
 // overload [] operator for convenient indexing / random acces to collection object, checks array bounds
 Coordinate& CoordinateArray::operator[](int index) const{
     if (index < 0 || index >= this->numElements) {
-		cerr<<"\nCoordinate Array indexing out of bounds"<<endl;
-		exit(1);
+		cout<<"\n CoordinateArray ERROR [ "<< index << " ] ***** Coordinate Array indexing out of bounds *****"<<endl;
+        static Coordinate badCoord(-1,-1);
+        return badCoord;
 	}
 	return this->elements[index];
 }
@@ -108,7 +109,7 @@ bool CoordinateArray::contains(const Coordinate& c) const{
 void CoordinateArray::print() const{
     cout << endl;
     for(int i = 0; i< this->numElements; ++i){
-        cout << this->elements[i] << endl;
+        cout << setw(5) << (i+1) << " : "<< this->elements[i] << endl;
     }
 }
 

@@ -3,14 +3,6 @@
 #include "defs.h"
 #include "Coordinate.h"
 
-#define EDGE 2         // int value for connection between two node elements in matrix
-#define NODE 1         // in the binary matrix, nodes are valued 1 -> expanded maintain value and relative position but are translated
-#define VISITED 2      // visited marking increment for walking the expanded matrix, must be even value >= EDGE
-
-#define EM_DEBUG 0     // debug for this class
-#define OFF_BOUNDS -1  // default int return if off bounds
-
-
 class Matrix {
     protected:
         int* matrix;    // 1 dimensional array of numbers to represent matrix
