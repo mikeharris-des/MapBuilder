@@ -28,13 +28,13 @@ CoordinateArray::CoordinateArray(int size){
 }
 
 // dynamic allocation of coordinate array, creates new copies of data (static coordinate objects)
-CoordinateArray::CoordinateArray(CoordinateArray* cArr){
-    this->backArrSize = cArr->backArrSize;
-    this->elements = new Coordinate[cArr->backArrSize];
-    this->numElements = cArr->numElements;
+CoordinateArray::CoordinateArray(const CoordinateArray& cArr){
+    this->backArrSize = cArr.backArrSize;
+    this->elements = new Coordinate[cArr.backArrSize];
+    this->numElements = cArr.numElements;
 
-    for(int i = 0; i<cArr->numElements; ++i){
-        this->elements[i] = Coordinate(cArr->elements[i]);
+    for(int i = 0; i<cArr.numElements; ++i){
+        this->elements[i] = Coordinate(cArr.elements[i]);
     }
 }
 
@@ -46,8 +46,9 @@ CoordinateArray::~CoordinateArray(){
 // overload [] operator for convenient indexing / random acces to collection object, checks array bounds
 Coordinate& CoordinateArray::operator[](int index) const{
     if (index < 0 || index >= this->numElements) {
-		cerr<<"\nCoordinate Array indexing out of bounds"<<endl;
-		exit(1);
+		cout<<"\n CoordinateArray ERROR [ "<< index << " ] ***** Coordinate Array indexing out of bounds *****"<<endl;
+        static Coordinate badCoord(-1,-1);  // static implemented to reference the coordinate globally for the reference return
+        return badCoord;
 	}
 	return this->elements[index];
 }
@@ -87,6 +88,16 @@ CoordinateArray& CoordinateArray::operator-=(const Coordinate& c){
 	return *this;
 }
 
+// overload -- operator for convenient removing from collection object from the back, handles empty
+CoordinateArray& CoordinateArray::operator--()
+{
+    if (this->numElements > 0)
+    {
+        --this->numElements;
+    }
+	return *this;
+}
+
 int CoordinateArray::getSize() const{
 	return this->numElements;
 }
@@ -108,7 +119,7 @@ bool CoordinateArray::contains(const Coordinate& c) const{
 void CoordinateArray::print() const{
     cout << endl;
     for(int i = 0; i< this->numElements; ++i){
-        cout << this->elements[i] << endl;
+        cout << setw(5) << (i+1) << " : "<< this->elements[i] << endl;
     }
 }
 

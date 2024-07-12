@@ -4,11 +4,6 @@
 #include "Coordinate.h"
 #include "Matrix.h"
 
-#define MF_DEBUG 0
-#define MF_DEBUG_MAKEMAP 0
-
-#define MAKE_SQUARE 1 //    if final map must be square (for rendering ui is easiest if square) ( const used in MapFoundation::makeMap() )
-
 class Map;
 
 class MapFoundation {
@@ -76,6 +71,7 @@ class MapFoundation {
         missed edges happens due to bidirectional walking and because edges marked visited if they are walked over to next node. If that node in direction is marked visited wont walk there.
         */
         void checkEdges();
+
         bool addUniqueEdge(const Coordinate& currCoord);                // adds coordinates to the edge array if they are not already present, maintaining a set of edge coordinates existing in final map
         bool addUniqueNode(const Coordinate& currCoord);                // adds coordinates to the node array if they are not already present, maintaining a set of node coordinates existing in final map
         bool addUniqueNodeToAdjacencyList(const Coordinate& currCoord, const Coordinate& adjacentCoord); // add to adj list table if it is unique in the given coordinates adjacency list

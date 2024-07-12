@@ -6,25 +6,30 @@ void printBreak(const Map& map);               // formatted console printout uti
 
 int main()
 {
-    srand(static_cast<unsigned int>(time(nullptr))); // seed random with current system time
+    srand( static_cast<unsigned int>(time(nullptr)) ); // seed random with current system time
 
     /*
-    determines max size of map on random generation
+    maxBaseDimension is a factor in determining the maximum size of final map on random generation
         -> base dimension becomes expanded to: maxBaseDimension + (maxBaseDimension-1)
         -> randomly generated map will crop out unconnected nodes to the main map
+
+    numberOfSpawnLocations determines how many unique nodes are stored in the map
+        -> minimum is 2
+        -> maximum is the number of nodes generated on the map
     */
-    int maxBaseDimension = 30;
-    Map map(maxBaseDimension);  // create map object
+    int maxBaseDimensionOfMatrix = 30;
+    int numberOfSpawnLocations = 2;
+
+    Map map( maxBaseDimensionOfMatrix, numberOfSpawnLocations );  // create map object
 
     printBreak(map);
     map.printAdjList();         // print the adjacency list first
     printBreak(map);
 
-    map.print();                // print map object
+    map.print();                // print 2d visual of map object formatted with coordinate display
     printBreak(map);
 
-    cout << "   ENTITY SPAWN1 START: @ " << map.getMapStart1() << endl;     // default primary starting coordinate of map
-    cout << "   ENTITY SPAWN2 START: G " << map.getMapStart2() << endl;     // default secondary starting coordinate of map
+    map.printSelectNodes();     // print the coordinates of select nodes in map
     printBreak(map);
 
     return 0;
@@ -32,9 +37,9 @@ int main()
 
 
 // formatted console printout utility function
-void printBreak(const Map& map)
+void printBreak( const Map& map )
 {
-    int size = 2*map.getXDim() + 3;
+    int size = 2*map.getXDim() + 3; // magic numbers correspond to size of formatted output spacing and coordinate display
     cout << endl;
     for(int i = 0 ; i < size ; ++i) { cout << "-"; }
     cout << endl;
