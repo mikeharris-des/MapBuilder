@@ -30,5 +30,4 @@
 
 #define OFF_BOUNDS              -1     // default int return if off bounds when accessing a coordinate cell value in the matrix
 
-
 using namespace std;

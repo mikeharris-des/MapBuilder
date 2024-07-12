@@ -41,6 +41,7 @@ class Matrix {
 
 
 class ExpandedMatrix : public Matrix {
+
     private:
         int exDx;              // dimension x of this matrix expanded from the base matrix
         int exDy;              // dimension y of this matrix expanded from the base matrix
