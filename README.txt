@@ -41,7 +41,7 @@ CONSOLE PRINTOUT ON EXECUTION:
 
 
 
-EXAMPLE CONSOLE PRINTOUT with maxBaseDimension = 30, numSelectNodes = 2 :
+EXAMPLE CONSOLE PRINTOUT with maxBaseDimensionOfMatrix = 30, numSelectNodes = 2 :
 
     -------------------------------------
 
@@ -85,37 +85,21 @@ EXAMPLE CONSOLE PRINTOUT with maxBaseDimension = 30, numSelectNodes = 2 :
        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6
 
     0  . . . . . . . . 1 . . . . . . . .
-
     1  . . . . . . . . 2 . . . . . . . .
-
     2  . . . . . . 1 2 1 . . . . . . . .
-
     3  . . . . . . . . 2 . . . . . . . .
-
     4  . . . . . . . . 1 . 1 2 1 . . . .
-
     5  . . . . . . . . 2 . 2 . 2 . . . .
-
     6  . . . . . . . . 1 2 1 . 1 . . . .
-
     7  . . . . . . . . . . 2 . 2 . . . .
-
     8  # 2 1 . . . 1 . . . 1 . @ . 1 . .
-
     9  . . 2 . . . 2 . . . 2 . 2 . 2 . .
-
     0  . . 1 2 1 2 1 . . . 1 2 1 2 1 . .
-
     1  . . 2 . . . 2 . . . 2 . . . . . .
-
     2  . . 1 . . . 1 . . . 1 . . . . . .
-
     3  . . 2 . . . . . . . 2 . . . . . .
-
     4  . . 1 2 1 . . . . . 1 2 1 . . . .
-
     5  . . . . 2 . . . . . 2 . . . . . .
-
     6  . . . . 1 2 1 2 1 2 1 . . . . . .
 
     -------------------------------------
@@ -131,10 +115,10 @@ EXAMPLE CONSOLE PRINTOUT with maxBaseDimension = 30, numSelectNodes = 2 :
 
 ABOUT MAP GENERATION:
 
-    to modify the maximum generated map size, in test.cc change 'maxBaseDimension' value in main() to any
+    to modify the maximum generated map size, in test.cc change 'maxBaseDimensionOfMatrix' value in main() to any
     desired integer value.
 
-    maxBaseDimension represents the base matrix square dimension n x n that is expanded to
+    maxBaseDimensionOfMatrix represents the base matrix square dimension n x n that is expanded to
     ( 2n - 1) x ( 2n - 1) :
 
         [ Matrix ]                                    [ ExpandedMatrix ] [ if REMOVE_COMMON_LOOPS is set]
@@ -152,21 +136,21 @@ ABOUT MAP GENERATION:
     MapFoundation will then crop the map and square it based on the largest/smallest x & y coordinates of
     the entire main branching structure.
 
-    the Map instance uses the MapFoundation instance to build the final map data without
-    including all member functions/variables unusable after making the finalized map.
+    the Map instance uses the MapFoundation instance to build all final map data with abstraction from
+    the member functions/variables used in the generation process
 
-    when modifying 'maxBaseDimension' Note:
+    when modifying 'maxBaseDimensionOfMatrix' :
 
-        'maxBaseDimension = 400' means:
+        'maxBaseDimensionOfMatrix = 400' means:
             400x400 base matrix rounded to 399x399 (for a valid centre cell) & expanded to 797x797 before
             cropping
 
-        maxBaseDimension Expanded becomes:
-            ( maxBaseDimension + (maxBaseDimension - 1) ) ^2 matrix
+        OR maxBaseDimensionOfMatrix Expanded becomes:
+            ( maxBaseDimensionOfMatrix + (maxBaseDimensionOfMatrix - 1) )^2 for the full matrix dimension
 
-        at varying maxBaseDimension = 200,300,400, program is unlikely to produce a map larger than 100x100 after
-        cropping
+        varying maxBaseDimensionOfMatrix to have a value of 200,300,400, will likely to produce a map of size 100x100
+        after cropping
 
-        maxBaseDimension = 400 will start to take a minimum 5-6 s to execute depending on your system
+        maxBaseDimensionOfMatrix = 400 will start to take a minimum 5-6 s to execute depending on your system
 
 --------------------------------------------------------------------------------------------------------------

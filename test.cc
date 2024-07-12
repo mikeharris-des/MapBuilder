@@ -6,7 +6,7 @@ void printBreak(const Map& map);               // formatted console printout uti
 
 int main()
 {
-    srand(static_cast<unsigned int>(time(nullptr))); // seed random with current system time
+    srand( static_cast<unsigned int>(time(nullptr)) ); // seed random with current system time
 
     /*
     maxBaseDimension is a factor in determining the maximum size of final map on random generation
@@ -20,7 +20,7 @@ int main()
     int maxBaseDimensionOfMatrix = 30;
     int numberOfSpawnLocations = 2;
 
-    Map map(maxBaseDimension,numberOfSpawnLocations);  // create map object
+    Map map( maxBaseDimensionOfMatrix, numberOfSpawnLocations );  // create map object
 
     printBreak(map);
     map.printAdjList();         // print the adjacency list first
@@ -37,7 +37,7 @@ int main()
 
 
 // formatted console printout utility function
-void printBreak(const Map& map)
+void printBreak( const Map& map )
 {
     int size = 2*map.getXDim() + 3; // magic numbers correspond to size of formatted output spacing and coordinate display
     cout << endl;

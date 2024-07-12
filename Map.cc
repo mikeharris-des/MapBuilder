@@ -269,8 +269,8 @@ void Map::print() const
                 }
             }
         }
-        cout << endl;
     }
+    cout << endl;
 }
 
 void Map::printNodes() const{
