@@ -9,12 +9,18 @@ int main()
     srand(static_cast<unsigned int>(time(nullptr))); // seed random with current system time
 
     /*
-    determines max size of map on random generation
+    maxBaseDimension is a factor in determining the maximum size of final map on random generation
         -> base dimension becomes expanded to: maxBaseDimension + (maxBaseDimension-1)
         -> randomly generated map will crop out unconnected nodes to the main map
+
+    numberOfSpawnLocations determines how many spawn locations are stored in the map
+        -> minimum is 2
+        -> maximum is the number of nodes generated on the map
     */
-    int maxBaseDimension = 30;
-    Map map(maxBaseDimension);  // create map object
+    int maxBaseDimensionOfMatrix = 30;
+    int numberOfSpawnLocations = 2;
+
+    Map map(maxBaseDimension,numberOfSpawnLocations);  // create map object
 
     printBreak(map);
     map.printAdjList();         // print the adjacency list first
