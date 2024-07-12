@@ -7,15 +7,12 @@ Map::Map( int maxBaseDimension, int numSelectNodes ){
 
     ExpandedMatrix expandedMatrix(maxBaseDimension); // makes expanded matrix with new dimensions nxn, n = dimension + (dimension-1)
 
-    expandedMatrix.removeCommonLoops(); // removes a random 2 on for a room that has four 2s adjacent to it. Makes an aestetic looking map, try commenting it outCLEARCOMMENT
+    expandedMatrix.removeCommonLoops(); // removes a random 2 on for a room that has four 2s adjacent to it. Makes an aestetic looking map
 
-    MapFoundation mapFoundation(&expandedMatrix); // Foundation crops map and removes rooms/doors not accessible to starting locationCLEARCOMMENT
-
-    if (numSelectNodes < MINIMUM_SELECT_NODES) numSelectNodes = MINIMUM_SELECT_NODES;
-    this->selectNodesCount = numSelectNodes;
+    MapFoundation mapFoundation(&expandedMatrix); // Foundation crops map and removes nodes/edges not accessible to main starting location / selectNode
 
     try{
-        copyMapData(mapFoundation); // if there is an invalid matrix from mapFoundation there will be an error thrown instead of a crash
+        copyMapData(mapFoundation, numSelectNodes); // if there is an invalid matrix from mapFoundation there will be an error thrown instead of a crash
     } catch(const string& error){
         cout << endl<< " * MAP: FAILED TO COPY MAP DATA * " << error << endl;
     }
@@ -32,7 +29,7 @@ Map::~Map(){
     delete this->adjacencyListTable;
 }
 
-void Map::copyMapData(const MapFoundation& mapFoundation){
+void Map::copyMapData(const MapFoundation& mapFoundation, int numSelectNodes){
     if(DEBUG)cout << "\nMap::copyMapData | LINE:" << __LINE__ << endl;
 
     // the following is assigning the pointers to the map data generated in mapFoundation object
@@ -44,7 +41,10 @@ void Map::copyMapData(const MapFoundation& mapFoundation){
     setMapStart1((*this->nodes)[0]); // set the starting location to the same
     setMapStart2((*this->nodes)[this->nodes->getSize()-1]); // set the starting location to the same
 
-    for(int i = 0; i< this->selectNodesCount; ++i)
+    if (numSelectNodes < MINIMUM_SELECT_NODES) numSelectNodes = MINIMUM_SELECT_NODES;
+    else if (numSelectNodes > getNumNodes()) numSelectNodes = getNumNodes();
+
+    for(int i = 0; i < numSelectNodes; ++i)
     {
         if (i==0)
         {
@@ -70,11 +70,11 @@ void Map::mapDebug(const ExpandedMatrix& expandedMatrix, const MapFoundation& ma
 
     pBreak();
     cout << "expandedMatrix.print()" << endl;
-    expandedMatrix.print();         // print base matrix of only 1s and 0s before expandCLEARCOMMENT
+    expandedMatrix.print();
 
     pBreak();
     cout << "expandedMatrix.printExpanded()" << endl;
-    expandedMatrix.printExpanded(); // print expanded matrix of 1s 2s and 0s after expandCLEARCOMMENT
+    expandedMatrix.printExpanded();
 
     pBreak();
     cout << "mapFoundation.print()" << endl;
@@ -121,11 +121,13 @@ int Map::getNumNodes() const{return this->nodes->getSize();} // get number of no
 int Map::getNumEdges() const{return this->edges->getSize();} // get number of edges in map (2s = connections/edges between nodes)
 
 // returns coordinate to a select node by index in the array
-Coordinate getSelectNode(int index) const
+Coordinate Map::getSelectNode(int index) const
 {
-    Coordinate badNode(-1,-1);
-    if (this->selectNodes[index] == badNode);
-    return this->selectNodes[0]; // default return if indexing bad node
+    int size = this->selectNodes.getSize();
+
+    if(index<0 || index >= size) {return Coordinate( (-1), (-1) );}
+
+    return this->selectNodes[index]; // default return if indexing bad node
 }
 
 Coordinate Map::getMapStart1() const{return this->start1;} // get defaulted starting coordinate 1
@@ -162,12 +164,6 @@ void Map::set(int x, int y, int value){
         return;
     }
     this->mapData->setCell(x,y,value);
-}
-
-// returns coordinate to a select node by index in the array
-Coordinate getSelectNode(int index) const
-{
-
 }
 
 // set defaulted starting coordinate 1
@@ -227,13 +223,15 @@ bool Map::addEdge(const Coordinate& c){
 }
 
 // print full map with the center location emphasized as @ char
-void Map::print() const{
-
+void Map::print() const
+{
     int rowCounter = 0;
 
     cout << endl << "   ";
     for(int colCounter = 0 ; colCounter < this->mapData->dx ; colCounter++) { cout << colCounter%10 << " ";}
     cout << endl;
+
+    CoordinateArray remainingSelectNodes(this->selectNodes);
 
     for(int y = 0; y<this->mapData->dy; ++y)
     {
@@ -242,29 +240,44 @@ void Map::print() const{
         for(int x = 0; x<this->mapData->dx; ++x)
         {
             if(this->mapData->getCell(x,y)==0){ cout << " ."; }
-            else{
-                if( start1.x==x && start1.y==y )
+            else
+            {
+                bool selectNodeAtCoordinate = false;
+                for(int i = 0 ; i<remainingSelectNodes.getSize() ; ++i)
                 {
-                    cout << " @";    // print start 1 location as a unique character
+                    Coordinate checkNode = remainingSelectNodes[i];
+
+                    if(i==0)    // if the first selectNode will be the Primary selectNode
+                    {
+                        if(checkNode.x==x && checkNode.y==y)
+                        {
+                            cout << " @"; // print start 1 location as a unique character
+                            selectNodeAtCoordinate = true;
+                        }
+                    }
+                    else if(checkNode.x==x && checkNode.y==y)
+                    {
+                        cout << " #";    // print alternative location as a unique character
+                        remainingSelectNodes -= checkNode;
+                        selectNodeAtCoordinate = true;
+                        break;
+                    }
                 }
-                else if( start2.x==x && start2.y==y )
+                if(!selectNodeAtCoordinate)
                 {
-                    cout << " G";    // print start 2 location as a unique character
-                }
-                else
-                {
-                    cout << " "<< this->mapData->getCell(x,y);
+                    cout << " " << this->mapData->getCell(x,y);  // print node as the cell value
                 }
             }
         }
+        cout << endl;
     }
-    cout << endl;
-
 }
 
 void Map::printNodes() const{
     cout << "\nALL NODES" << endl;
     this->nodes->print();
+    cout << "\nALL SELECT NODES" << endl;
+    this->selectNodes.print();
 }
 
 void Map::printEdges() const{
@@ -272,14 +285,27 @@ void Map::printEdges() const{
     this->edges->print();
 }
 
-void printSelectNodes() const
+void Map::printSelectNodes() const
 {
-    cout << "\nALL SELECT NODES" << endl;
-    this->selectNodes.print();
+    cout << endl;
+    int size = this->selectNodes.getSize();
+    for(int i = 0 ; i<size ; ++i)
+    {
+        cout << "   SELECT NODE [" << setw(2) << (i+1) << " ] START: ";
+        if(i == 0)
+        {
+            cout << "@ "; // default primary starting coordinate of map
+        }
+        else
+        {
+            cout << "# "; // default alternative starting coordinate icon on map printout
+        }
+        cout << this->selectNodes[i] << endl;
+    }
 }
 
 void Map::printAdjList() const{
-    cout << "\nALL ADJACENCY DATA" << endl;
+    cout << "\nALL ADJACENCY DATA" << endl << endl;
     int counter = 1;
 
     for (unordered_map<Coordinate, CoordinateArray>::iterator node = this->adjacencyListTable->begin(); node != this->adjacencyListTable->end(); ++node)

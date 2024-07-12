@@ -65,12 +65,13 @@ class CoordinateArray {
       public:
 
           CoordinateArray(int size = DEFAULT_ARRAY_SIZE);               // dynamic allocation of array of coordinates
-          CoordinateArray(CoordinateArray* cArr);       // dynamic allocation of array of coordinates, creates new copies of data (static coordinate objects)
+          CoordinateArray(const CoordinateArray& cArr);       // dynamic allocation of array of coordinates, creates new copies of data (static coordinate objects)
           ~CoordinateArray();
 
           Coordinate& operator[](int i) const;              // overload [] operator for convenient indexing / random acces to collection object, checks array bounds
           CoordinateArray& operator+=(const Coordinate& c); // overload += operator for convenient adding to collection object, handles resizing
           CoordinateArray& operator-=(const Coordinate& c); // overload -= operator for convenient removing from collection object, handles shifting
+          CoordinateArray& operator--(); // overload -- operator for convenient removing from collection object from the back, handles empty
 
 
           int getSize() const;
@@ -80,7 +81,7 @@ class CoordinateArray {
 
       private:
           int numElements;      // size of elements array
-          Coordinate* elements; // dynamic allocated array of T objects (can be pointers)
+          Coordinate* elements; // dynamic allocated array of Coordinate objects 
           int backArrSize;      // number of elements in backing array (will be resized)
 };
 

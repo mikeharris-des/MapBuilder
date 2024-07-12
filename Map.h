@@ -17,13 +17,12 @@ class Map {
 
         unordered_map<Coordinate, CoordinateArray, CoordinateHashFunction> *adjacencyListTable; // hash table storing node adjacency coordinates if an attaches them at a given node in order of ENWS
 
-        int selectNodesCount;               // number of select nodes in the array
         CoordinateArray selectNodes;        // coordinate array of random nodes designated for unique map features at these nodes
 
         Coordinate start1;            // the coordinate of the spawn room ( around the centre of map ), to get another spawn use getRoom( getNumRooms()-1 )
         Coordinate start2;
 
-        void copyMapData(const MapFoundation& mapFoundation); // utility function for copying MapFoundation object data *will throw err if dimension missmatch
+        void copyMapData(const MapFoundation& mapFoundation, int numSelectNodes); // utility function for copying MapFoundation object data *will throw err if dimension missmatch
 
         void mapDebug(const ExpandedMatrix& expandedMatrix, const MapFoundation& mapFoundation); // prints data at each stage of building the map
 
@@ -39,6 +38,7 @@ class Map {
         int getNumEdges() const;            // getter size of edges arr
 
         Coordinate getSelectNode(int index) const;  // returns coordinate to a select node by index in the array
+
         Coordinate getMapStart1() const;        // returns mapStart1
         Coordinate getMapStart2() const;      // returns mapStart2
 
@@ -60,7 +60,4 @@ class Map {
         void printSelectNodes() const;          // prints all coordinates of selectNodes in map
 
         void printAdjList() const;              // prints all coordinates of nodes adjacent to each node in map
-        /*
-        TODO add member/method for adjacency list CoordinateArray for each node, containing data for the edges/nodes connected to each node
-        */
 };

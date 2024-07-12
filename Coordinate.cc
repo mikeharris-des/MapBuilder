@@ -28,13 +28,13 @@ CoordinateArray::CoordinateArray(int size){
 }
 
 // dynamic allocation of coordinate array, creates new copies of data (static coordinate objects)
-CoordinateArray::CoordinateArray(CoordinateArray* cArr){
-    this->backArrSize = cArr->backArrSize;
-    this->elements = new Coordinate[cArr->backArrSize];
-    this->numElements = cArr->numElements;
+CoordinateArray::CoordinateArray(const CoordinateArray& cArr){
+    this->backArrSize = cArr.backArrSize;
+    this->elements = new Coordinate[cArr.backArrSize];
+    this->numElements = cArr.numElements;
 
-    for(int i = 0; i<cArr->numElements; ++i){
-        this->elements[i] = Coordinate(cArr->elements[i]);
+    for(int i = 0; i<cArr.numElements; ++i){
+        this->elements[i] = Coordinate(cArr.elements[i]);
     }
 }
 
@@ -47,7 +47,7 @@ CoordinateArray::~CoordinateArray(){
 Coordinate& CoordinateArray::operator[](int index) const{
     if (index < 0 || index >= this->numElements) {
 		cout<<"\n CoordinateArray ERROR [ "<< index << " ] ***** Coordinate Array indexing out of bounds *****"<<endl;
-        static Coordinate badCoord(-1,-1);
+        static Coordinate badCoord(-1,-1);  // static implemented to reference the coordinate globally for the reference return
         return badCoord;
 	}
 	return this->elements[index];
@@ -85,6 +85,16 @@ CoordinateArray& CoordinateArray::operator-=(const Coordinate& c){
 		this->elements[i] = this->elements[i + 1];        // shift elements
 		++i;
 	}
+	return *this;
+}
+
+// overload -- operator for convenient removing from collection object from the back, handles empty
+CoordinateArray& CoordinateArray::operator--()
+{
+    if (this->numElements > 0)
+    {
+        --this->numElements;
+    }
 	return *this;
 }
 

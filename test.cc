@@ -14,23 +14,16 @@ int main()
         -> randomly generated map will crop out unconnected nodes to the main map
     */
     int maxBaseDimension = 30;
-    Map map(maxBaseDimension,5);  // create map object
+    Map map(maxBaseDimension);  // create map object
 
     printBreak(map);
     map.printAdjList();         // print the adjacency list first
     printBreak(map);
 
-    map.printNodes();
+    map.print();                // print 2d visual of map object formatted with coordinate display
     printBreak(map);
 
-    map.printSelectNodes();
-    printBreak(map);
-
-    map.print();                // print map object
-    printBreak(map);
-
-    cout << "   ENTITY SPAWN1 START: @ " << map.getMapStart1() << endl;     // default primary starting coordinate of map
-    cout << "   ENTITY SPAWN2 START: G " << map.getMapStart2() << endl;     // default secondary starting coordinate of map
+    map.printSelectNodes();     // print the coordinates of select nodes in map
     printBreak(map);
 
     return 0;
@@ -40,7 +33,7 @@ int main()
 // formatted console printout utility function
 void printBreak(const Map& map)
 {
-    int size = 2*map.getXDim() + 3;
+    int size = 2*map.getXDim() + 3; // magic numbers correspond to size of formatted output spacing and coordinate display
     cout << endl;
     for(int i = 0 ; i < size ; ++i) { cout << "-"; }
     cout << endl;
