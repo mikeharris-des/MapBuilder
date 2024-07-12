@@ -28,10 +28,10 @@ CONSOLE PRINTOUT ON EXECUTION:
 
     1s are nodes
     2s are edges connecting nodes
-    '.' are zeros and are modified only when printed for an easy visual of the map layout
+    '.' are zeros and are modified only in output stream for an easy visual of the map layout
 
-    @ is the primary spawn location for this map
-    # is any additional spawn location for this map (can be more than 1)
+    @ is the primary unique node coordinate for this map
+    # is any unique node coordinate or 'Select Node' for this map (a map can be set to have more than 2)
 
     Map data is translated to the top left of the squared map for purposes of working with a specific gui window
 
@@ -41,7 +41,7 @@ CONSOLE PRINTOUT ON EXECUTION:
 
 
 
-EXAMPLE CONSOLE PRINTOUT [maxBaseDimension = 30]:
+EXAMPLE CONSOLE PRINTOUT with maxBaseDimension = 30, numSelectNodes = 2 :
 
     -------------------------------------
 

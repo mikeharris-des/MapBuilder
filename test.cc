@@ -13,7 +13,7 @@ int main()
         -> base dimension becomes expanded to: maxBaseDimension + (maxBaseDimension-1)
         -> randomly generated map will crop out unconnected nodes to the main map
 
-    numberOfSpawnLocations determines how many spawn locations are stored in the map
+    numberOfSpawnLocations determines how many unique nodes are stored in the map
         -> minimum is 2
         -> maximum is the number of nodes generated on the map
     */
