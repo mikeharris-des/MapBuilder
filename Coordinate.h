@@ -14,7 +14,7 @@ struct Coordinate{
     int x,y;            //  x,y is assumed zero index ie x: 0,1,2,3,4  for 5x5 matrix
 
     Coordinate(){
-        x=y=0;
+        x=y=(-1);
     }
     Coordinate(const Coordinate& c){
         this->x = c.x;
@@ -81,7 +81,7 @@ class CoordinateArray {
 
       private:
           int numElements;      // size of elements array
-          Coordinate* elements; // dynamic allocated array of Coordinate objects 
+          Coordinate* elements; // dynamic allocated array of Coordinate objects
           int backArrSize;      // number of elements in backing array (will be resized)
 };
 
