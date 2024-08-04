@@ -38,9 +38,6 @@ void Map::copyMapData(const MapFoundation& mapFoundation, int numSelectNodes){
     this->edges = mapFoundation.finalEdges;
     this->adjacencyListTable = mapFoundation.finalAdjacencyListTable;
 
-    setMapStart1((*this->nodes)[0]); // set the starting location to the same
-    setMapStart2((*this->nodes)[this->nodes->getSize()-1]); // set the starting location to the same
-
     if (numSelectNodes < MINIMUM_SELECT_NODES) numSelectNodes = MINIMUM_SELECT_NODES;
     else if (numSelectNodes > getNumNodes()) numSelectNodes = getNumNodes();
 
@@ -98,10 +95,6 @@ void Map::mapDebug(const ExpandedMatrix& expandedMatrix, const MapFoundation& ma
         print();
 
         pBreak();
-        cout << "   SPAWN1 START @ " << getMapStart1() << endl; // default starting coordinate of map or first node added to node array
-        cout << "   SPAWN2 START G " << getMapStart2() << endl; // print last node added for option to add additional element to map -> eg PLAYER 2 SPAWN
-
-        pBreak();
         cout << "map.printNodes()" << endl;
         printNodes();
 
@@ -129,9 +122,6 @@ Coordinate Map::getSelectNode(int index) const
 
     return this->selectNodes[index]; // default return if indexing bad node
 }
-
-Coordinate Map::getMapStart1() const{return this->start1;} // get defaulted starting coordinate 1
-Coordinate Map::getMapStart2() const{return this->start2;} // get defaulted starting coordinate 2
 
 // get cell value of coordinate
 int Map::get(const Coordinate& c){
@@ -164,32 +154,6 @@ void Map::set(int x, int y, int value){
         return;
     }
     this->mapData->setCell(x,y,value);
-}
-
-// set defaulted starting coordinate 1
-void Map::setMapStart1(const Coordinate& c){
-    if(DEBUG)cout << "\nMap::setMapStart1 " << c << " | LINE:" << __LINE__ << endl;
-
-    int cell = get(c);
-
-    if( cell == NODE ){
-        this->start1 = Coordinate(c);
-    } else {
-        cout << " * invalid set start 1 location: " << c << endl; // no if debug something is really wrong if branches here
-    }
-}
-
-// set defaulted starting coordinate 1
-void Map::setMapStart2(const Coordinate& c){
-    if(DEBUG)cout << "\nMap::setMapStart2 " << c << " | LINE:" << __LINE__ << endl;
-
-    int cell = get(c);
-
-    if( cell == NODE ){
-        this->start2 = Coordinate(c);
-    } else {
-        cout << " * invalid set start 2 location: " << c << endl; // no if debug something is really wrong if branches here
-    }
 }
 
 bool Map::offBounds(int x, int y) const{

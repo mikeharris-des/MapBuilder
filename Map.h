@@ -19,9 +19,6 @@ class Map {
 
         CoordinateArray selectNodes;        // coordinate array of random nodes designated for unique map features at these nodes
 
-        Coordinate start1;            // the coordinate of the spawn room ( around the centre of map ), to get another spawn use getRoom( getNumRooms()-1 )
-        Coordinate start2;
-
         void copyMapData(const MapFoundation& mapFoundation, int numSelectNodes); // utility function for copying MapFoundation object data *will throw err if dimension missmatch
 
         void mapDebug(const ExpandedMatrix& expandedMatrix, const MapFoundation& mapFoundation); // prints data at each stage of building the map
@@ -39,16 +36,10 @@ class Map {
 
         Coordinate getSelectNode(int index) const;  // returns coordinate to a select node by index in the array
 
-        Coordinate getMapStart1() const;        // returns mapStart1
-        Coordinate getMapStart2() const;      // returns mapStart2
-
         int get(const Coordinate& c);       // returns cell value at that coordinate if in bounds
         Coordinate getNodes(int i) const;    // returns node at index of node array if i exists
 
         void set(int x, int y, int value);  // sets a cell of the map to the 'value' if in bounds
-
-        void setMapStart1(const Coordinate& c);     // set mapStart if it is in bounds
-        void setMapStart2(const Coordinate& c);     // set mapStart if it is in bounds
 
         bool offBounds(int x, int y) const;     // returns true if the x,y coordinate is not in bounds eg. if offBounds(): break
         bool addNode(const Coordinate& c);      // adds a coordinate to nodes array if in bounds, if this is the first node added to the array sets c as mapStart

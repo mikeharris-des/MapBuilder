@@ -18,7 +18,7 @@ int main()
         -> maximum is the number of nodes generated on the map
     */
     int maxBaseDimensionOfMatrix = 30;
-    int numberOfSpawnLocations = 2;
+    int numberOfSpawnLocations = 3;
 
     Map map( maxBaseDimensionOfMatrix, numberOfSpawnLocations );  // create map object
 
