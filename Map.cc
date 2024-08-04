@@ -1,6 +1,7 @@
 #include "Map.h"
 
-Map::Map( int maxBaseDimension, int numSelectNodes ){
+Map::Map( int maxBaseDimension, int numSelectNodes )
+{
     if(DEBUG)cout << "\nMap::ctor | LINE:" << __LINE__ << endl;
 
     if (maxBaseDimension < DEFAULT_DIMENSION) maxBaseDimension = DEFAULT_DIMENSION;
@@ -21,7 +22,8 @@ Map::Map( int maxBaseDimension, int numSelectNodes ){
 }
 
 
-Map::~Map(){
+Map::~Map()
+{
     if(DEBUG)cout << "\nMap::dtor | LINE:" << __LINE__ << endl;
     delete this->edges;
     delete this->nodes;
@@ -29,7 +31,8 @@ Map::~Map(){
     delete this->adjacencyListTable;
 }
 
-void Map::copyMapData(const MapFoundation& mapFoundation, int numSelectNodes){
+void Map::copyMapData(const MapFoundation& mapFoundation, int numSelectNodes)
+{
     if(DEBUG)cout << "\nMap::copyMapData | LINE:" << __LINE__ << endl;
 
     // the following is assigning the pointers to the map data generated in mapFoundation object
@@ -59,49 +62,68 @@ void Map::copyMapData(const MapFoundation& mapFoundation, int numSelectNodes){
     }
 }
 
-// debug utility function
-void pBreak(){cout << endl << "-------------------------------------------------------" << endl;}
+// formatted console printout utility function
+void pBreak( const Map& map , int testID )
+{
+    int size = 2*map.getXDim() + 3; // magic numbers correspond to size of formatted output spacing and coordinate display
+    cout << endl;
+    for(int i = 0 ; i < size ; ++i) { cout << "-"; }
+    cout << " * " << testID << endl;
+}
 
-void Map::mapDebug(const ExpandedMatrix& expandedMatrix, const MapFoundation& mapFoundation){
+void Map::mapDebug(const ExpandedMatrix& expandedMatrix, const MapFoundation& mapFoundation)
+{
     cout << "\nMap::mapDebug | LINE:" << __LINE__ << endl;
+    int testID = 0;
 
-    pBreak();
+    pBreak(*this, ++testID);
     cout << "expandedMatrix.print()" << endl;
     expandedMatrix.print();
 
-    pBreak();
+    pBreak(*this, ++testID);
     cout << "expandedMatrix.printExpanded()" << endl;
     expandedMatrix.printExpanded();
 
-    pBreak();
+    pBreak(*this, ++testID);
     cout << "mapFoundation.print()" << endl;
     mapFoundation.print(); // print map uncropped, after mapwalk, after removing of isolated elements
 
-    pBreak();
+    pBreak(*this, ++testID);
     cout << "mapFoundation.printBoundsAbsolute()" << endl;
     mapFoundation.printBoundsAbsolute(); // print map uncropped, after mapwalk, after removing of isolated elements
 
-    pBreak();
+    pBreak(*this, ++testID);
     cout << "mapFoundation.printFinalNodes()" << endl;
     mapFoundation.finalNodes->print();
 
-    pBreak();
+    pBreak(*this, ++testID);
     cout << "mapFoundation.finalMatrix->print()" << endl;
     mapFoundation.finalMatrix->print();
 
-    if(this->nodes->getSize()>=1){
-        pBreak();
-        cout << "map.print()" << endl;
-        print();
+    pBreak(*this, ++testID);
 
-        pBreak();
-        cout << "map.printNodes()" << endl;
-        printNodes();
+    printAdjList();
 
-    } else{
-        cout << "| nodes arr | < 1" << endl;
+    pBreak(*this, ++testID);
+
+    print();
+
+    pBreak(*this, ++testID);
+
+    // test adjacency list table and the corresponding utility functions for accessing adjacency elements
+    for(int i = 0; i < (*nodes).getSize() ; ++i )
+    {
+        cout << endl << "NODE: " << (*nodes)[i] << endl;
+        const CoordinateArray temp = getAdjacency( (*nodes)[i] );
+        temp.print();
+        for(int j = 0; j < temp.getSize() ; ++j )
+        {
+            cout << "       " << (*nodes)[i] << " -> " << getEdge( (*nodes)[i] , temp[j] )  << " -> " << temp[j] << endl;
+        }
+        cout << endl;
     }
-    pBreak();
+
+    pBreak(*this, ++testID);
 }
 
 
@@ -124,9 +146,9 @@ Coordinate Map::getSelectNode(int index) const
 }
 
 // get cell value of coordinate
-int Map::get(const Coordinate& c){
+int Map::getCell(const Coordinate& c){
     if( offBounds(c.x,c.y) ){
-        if(MAP_DEBUG)cout << "Map::get OFF BOUNDS" << endl;
+        if(MAP_DEBUG)cout << "Map::getCell OFF BOUNDS" << endl;
         return 0;
     }
 
@@ -144,6 +166,34 @@ Coordinate Map::getNodes(int i) const{
     return node;
 }
 
+// returns the adjacency list of coordinates to edges in order 0->3 : ENWS
+const CoordinateArray& Map::getAdjacency(const Coordinate& c) const
+{
+    if( offBounds(c.x,c.y) )
+    {
+        if(MAP_DEBUG)cout << "Map::getAdjacency OFF BOUNDS" << endl;
+        exit(1);
+    }
+    return (*this->adjacencyListTable)[c];
+}
+
+// returns the edge connecting a and b if it exists
+Coordinate Map::getEdge(const Coordinate& a, const Coordinate& b) const
+{
+    if( offBounds(a.x,a.y) || offBounds(b.x,b.y) )
+    {
+        if(MAP_DEBUG)cout << "Map::getEdge OFF BOUNDS" << endl;
+        exit(1);
+    }
+
+    // 2 is the cell coordinate difference of 2 nodes in the map (seperated by 1 edge)
+    int diffX = (b.x - a.x)/2;
+    int diffY = (b.y - a.y)/2;
+
+    if( abs(diffX) > 1 || abs(diffY) > 1 ) { return Coordinate(); }
+
+    return Coordinate( a.x + diffX, a.y + diffY );
+}
 
 // set these x,y values in map to the value
 void Map::set(int x, int y, int value){
@@ -156,6 +206,7 @@ void Map::set(int x, int y, int value){
     this->mapData->setCell(x,y,value);
 }
 
+// checks the bounds of the map using the matrix object function
 bool Map::offBounds(int x, int y) const{
     return this->mapData->offBounds(x,y);
 }
