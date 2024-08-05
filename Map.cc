@@ -19,7 +19,6 @@ Map::Map( int maxBaseDimension, int numSelectNodes )
     }
 
     if(DEBUG)mapDebug(expandedMatrix,mapFoundation);
-    mapDebug(expandedMatrix,mapFoundation);
 }
 
 
