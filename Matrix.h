@@ -1,6 +1,6 @@
 #pragma once
 
-#include "defs.h"
+#include "MapDefs.h"
 #include "Coordinate.h"
 
 class Matrix {

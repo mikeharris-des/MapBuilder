@@ -19,6 +19,7 @@ Map::Map( int maxBaseDimension, int numSelectNodes )
     }
 
     if(DEBUG)mapDebug(expandedMatrix,mapFoundation);
+    mapDebug(expandedMatrix,mapFoundation);
 }
 
 
@@ -101,15 +102,15 @@ void Map::mapDebug(const ExpandedMatrix& expandedMatrix, const MapFoundation& ma
     mapFoundation.finalMatrix->print();
 
     pBreak(*this, ++testID);
-
+    cout << "map.printAdjList()" << endl;
     printAdjList();
 
     pBreak(*this, ++testID);
-
+    cout << "map.print()" << endl;
     print();
 
     pBreak(*this, ++testID);
-
+    cout << "testing Map adjacency implementation < Map::getAdjacency(), Map::getEdge() > " << endl;
     // test adjacency list table and the corresponding utility functions for accessing adjacency elements
     for(int i = 0; i < (*nodes).getSize() ; ++i )
     {
@@ -118,12 +119,10 @@ void Map::mapDebug(const ExpandedMatrix& expandedMatrix, const MapFoundation& ma
         temp.print();
         for(int j = 0; j < temp.getSize() ; ++j )
         {
-            cout << "       " << (*nodes)[i] << " -> " << getEdge( (*nodes)[i] , temp[j] )  << " -> " << temp[j] << endl;
+            cout << "       " << (*nodes)[i] << " --[" << direction::toString( direction::getDirection( (*nodes)[i], temp[j] ) ) << "]-> " << getEdge( (*nodes)[i] , temp[j] )  << " -> " << temp[j] << endl;
         }
         cout << endl;
     }
-
-    pBreak(*this, ++testID);
 }
 
 

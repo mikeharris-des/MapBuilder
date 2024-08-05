@@ -81,18 +81,18 @@ void MapFoundation::matrixWalk(Coordinate& currCoord){
         if(MF_DEBUG)cout << " CURRCORD  "<< currCoord  << " = "<< this->expandedMatrix->get(currCoord) << endl;
     }
 
-    int nextDir = Direction::DIRECTION_COUNT; // default if nextDir isnt assigned to a valid direction == dead end hit
+    int nextDir = DIRECTION_COUNT; // default if nextDir isnt assigned to a valid direction == dead end hit
 
     bool first = true;
 
     // Step 3: Explore all directions from the current coordinate in constant order (EAST then NORTH then WEST then SOUTH)
-    for (int i = 0; i < Direction::DIRECTION_COUNT; ++i) { // check all directions (ENWS) from curr coord
-        Direction::Value dir = static_cast<Direction::Value>(i);
+    for (int i = 0; i < DIRECTION_COUNT; ++i) { // check all directions (ENWS) from curr coord
+        DirectionType dir = static_cast<DirectionType>(i);
 
         Coordinate tempCoord(currCoord); // copy curr cord
         tempCoord.set(dir); // move one cell from the current coordinate to the direction specified
 
-        if(MF_DEBUG)cout << currCoord << " -> " << Direction::toString(dir) << " = " << tempCoord << " ";
+        if(MF_DEBUG)cout << currCoord << " -> " << direction::toString(dir) << " = " << tempCoord << " ";
 
         if(this->expandedMatrix->checkElementExpanded(tempCoord, EDGE)){ // if edge is at that direction
             if(first){ // move consistent order direction first
@@ -115,12 +115,12 @@ void MapFoundation::matrixWalk(Coordinate& currCoord){
     }
     if(MF_DEBUG)cout << " \n____________________________  " << endl;
 
-    Direction::Value dir = static_cast<Direction::Value>(nextDir);
+    DirectionType dir = static_cast<DirectionType>(nextDir);
     /*
     Step 4: Check the first edge marked seen from Step 2 if it exists
         4a. RECURSIVE STEP: if a new edge exists mark it as visited and call matrixWalk on the edges corresponding node
     */
-    if( dir != Direction::DIRECTION_COUNT ){ // in !default dir assignment (new direction assigned and not deadend)
+    if( dir != DIRECTION_COUNT ){ // in !default dir assignment (new direction assigned and not deadend)
 
         currCoord.set(dir); // increment to adjacent cell that is edge
         this->expandedMatrix->markCellVisited(currCoord); // mark edge visited

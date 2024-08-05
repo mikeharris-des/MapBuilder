@@ -31,3 +31,24 @@
 #define OFF_BOUNDS              -1     // default int return if off bounds when accessing a coordinate cell value in the matrix
 
 using namespace std;
+
+struct Coordinate;
+
+// 'direction' encapsulates functionality related to directional operations with coordinates
+namespace direction
+{
+    typedef enum Direction
+    {
+        EAST,               // direction pointing right on a grid
+        NORTH,              // direction pointing up on a grid
+        WEST,               // direction pointing left on a grid
+        SOUTH,              // direction pointing down on a grid
+        DIRECTION_COUNT     // total number of directions / also used as a default placeholder or bad direction reference for a DirectionType
+    } DirectionType;
+
+    string toString( DirectionType dir );                                       // converts a DirectionType value to its corresponding string representation
+
+    DirectionType getDirection( const Coordinate& a, const Coordinate& b );     // determines the direction from the point of reference of coordinate 'a' to coordinate 'b'
+}
+
+using namespace direction; // for ease of use of typing EAST, NORTH... without leading namespace display, but also using direction::toString() and direction::getDirection() to indicate origin

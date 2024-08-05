@@ -1,5 +1,5 @@
 #pragma once
-#include "defs.h"
+#include "MapDefs.h"
 #include "Map.h"
 #include "Coordinate.h"
 #include "Matrix.h"
