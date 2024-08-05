@@ -1,8 +1,6 @@
-#include "Map.h"                                     // map object header file
-
+#include "Map.h"                               // map object header file
 
 void printBreak(const Map& map);               // formatted console printout utility function
-
 
 int main()
 {

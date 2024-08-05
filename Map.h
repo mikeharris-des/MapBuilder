@@ -1,5 +1,5 @@
 #pragma once
-#include "defs.h"               // includes cstdlib for srand and ctime for time
+#include "MapDefs.h"            // includes cstdlib for srand and ctime for time
 #include "MapFoundation.h"      // object bridges matrix to full map object
 #include "Matrix.h"             // base matrix and expanded matrix
 #include "Coordinate.h"         // 2d coordinate object, PARAMETER ORDERING WILL ALWAYS BE X THEN Y: (x,y)

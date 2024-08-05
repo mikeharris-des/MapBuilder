@@ -1,30 +1,30 @@
 #pragma once
-#include "defs.h"
-
-namespace Direction {
-
-    enum Value { EAST, NORTH, WEST, SOUTH, DIRECTION_COUNT };
-
-    string toString(Value dir); // Coordinate.cc for implementation
-
-}
+#include "MapDefs.h"
 
 // struct storing two integers corresponding to 2 dimensional coordinates on a map / matrix / grid, PARAMETER ORDERING WILL ALWAYS BE X THEN Y: (x,y)
-struct Coordinate{
+struct Coordinate
+{
     int x,y;            //  x,y is assumed zero index ie x: 0,1,2,3,4  for 5x5 matrix
 
-    Coordinate(){
+    Coordinate()
+    {
         x=y=(-1);
     }
-    Coordinate(const Coordinate& c){
+
+    Coordinate(const Coordinate& c)
+    {
         this->x = c.x;
         this->y = c.y;
     }
-    Coordinate(int sx, int sy){
+
+    Coordinate(int sx, int sy)
+    {
         this->x = sx;
         this->y = sy;
     }
-    void set(int sx, int sy){ // set coordinate to sx,sy cell
+
+    void set(int sx, int sy)
+    { // set coordinate to sx,sy cell
         if(sx<0 || sy<0){
             return;
         }
@@ -32,18 +32,20 @@ struct Coordinate{
         this->y = sy;
     }
 
-    void set(Direction::Value dir){ // set coordinate to +1 cell in that direction
+    // set coordinate to +1 cell in that direction
+    void set( DirectionType dir )
+    {
         switch(dir){
-            case Direction::EAST:
+            case EAST:
                 ++this->x;
                 break;
-            case Direction::NORTH:
+            case NORTH:
                 --this->y;
                 break;
-            case Direction::WEST:
+            case WEST:
                 --this->x;
                 break;
-            case Direction::SOUTH:
+            case SOUTH:
                 ++this->y;
                 break;
             default:
@@ -54,14 +56,16 @@ struct Coordinate{
 
     friend ostream& operator<<(ostream& os, const Coordinate& coord); // Coordinate.cc for implementation
 
-    bool operator==(const Coordinate& c) const{
+    bool operator==(const Coordinate& c) const
+    {
         return (c.x == this->x && c.y == this->y);
     }
 
 };
 
 // collection class for coordinates, will dynamicly resize : see Coordinate.cc for implementation
-class CoordinateArray {
+class CoordinateArray
+{
       public:
 
           CoordinateArray(int size = DEFAULT_ARRAY_SIZE);               // dynamic allocation of array of coordinates

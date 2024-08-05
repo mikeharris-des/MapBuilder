@@ -205,10 +205,10 @@ void ExpandedMatrix::addEdges(){
         for(int x = 0; x<dx;++x){ //
             if(EM_DEBUG)cout << "    x: " << x << " y: " << y << "       " << " -> ("<< x*2 << "," << y*2 << ") on exp "<<endl;
             if(matrix[ y*dx + x ]==NODE){ // if cell is 1
-                for (int i = 0; i < Direction::DIRECTION_COUNT; ++i) { // iterate through all directions
+                for (int i = 0; i < DIRECTION_COUNT; ++i) { // iterate through all directions
 
-                    Direction::Value dir = static_cast<Direction::Value>(i); // cast i to direction
-                    if(EM_DEBUG)cout << "    -> " << Direction::toString(dir) << " _ ";
+                    DirectionType dir = static_cast<DirectionType>(i); // cast i to direction
+                    if(EM_DEBUG)cout << "    -> " << direction::toString(dir) << " _ ";
 
                     Coordinate c(x,y); // make new coordinate at x,y
                     c.set(dir);        // set coord to cell in designated direction
@@ -279,17 +279,17 @@ void ExpandedMatrix::removeCommonLoops(){
                 int countLoop = 0; // if countLoop == DIRECTION_COUNT means common loop
                 Coordinate cEx(x,y); // current cell
 
-                for (int i = 0; i < Direction::DIRECTION_COUNT; ++i) {
+                for (int i = 0; i < DIRECTION_COUNT; ++i) {
 
                     Coordinate cCopy(cEx); // start at cEx (current cel), make a copy of the coordinate
-                    Direction::Value dir = static_cast<Direction::Value>(i);
+                    DirectionType dir = static_cast<DirectionType>(i);
                     cCopy.set(dir);
                     if(checkElementExpanded(cCopy, EDGE)){++countLoop;} // if in all directions is a edge increment counter
                 }
 
-                if(countLoop == Direction::DIRECTION_COUNT){ // if edge in all directions
+                if(countLoop == DIRECTION_COUNT){ // if edge in all directions
 
-                    Direction::Value dir = static_cast<Direction::Value>( rand() % Direction::DIRECTION_COUNT ); // get random direction
+                    DirectionType dir = static_cast<DirectionType>( rand() % DIRECTION_COUNT ); // get random direction
 
                     cEx.set(dir); // change coordinate to random edge coordinate
                     if(!removeEdge(cEx)){ // remove edge

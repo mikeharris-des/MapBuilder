@@ -5,7 +5,7 @@ ostream& operator<<(ostream& os, const Coordinate& coord){
     return os;
 }
 
-string Direction::toString(Value dir){
+string direction::toString( DirectionType dir ){
     switch(dir){
         case EAST:
             return "EAST";
@@ -19,6 +19,36 @@ string Direction::toString(Value dir){
             return "UNKNOWN DIRECTION";
     }
 }
+
+// get the direction from the point of reference of coordinate a, the direction that coordinate b is in
+DirectionType direction::getDirection( const Coordinate& a, const Coordinate& b )
+{
+    // 2 is the cell coordinate difference of 2 nodes in the map (seperated by 1 edge)
+    int diffX = (b.x - a.x);
+    int diffY = (b.y - a.y);
+
+    DirectionType directionOfB = DIRECTION_COUNT;
+
+   if (diffX > 0 && diffY == 0)
+   {
+        directionOfB = EAST;
+    }
+    else if (diffX == 0 && diffY < 0)
+    {
+        directionOfB = NORTH;
+    }
+    else if (diffX < 0 && diffY == 0)
+    {
+        directionOfB = WEST;
+    }
+    else if (diffX == 0 && diffY > 0)
+    {
+        directionOfB = SOUTH;
+    }
+
+    return directionOfB;
+}
+
 
 // dynamic allocation of coordinate array
 CoordinateArray::CoordinateArray(int size){
